@@ -41,7 +41,7 @@ aliyun() {
   sed -i -E 's#https?://[^/]+/debian#https://mirrors.aliyun.com/debian#g' $sources_list
   # security
   sed -i -E 's#https?://[^/]+/debian-security#https://mirrors.aliyun.com/debian-security#g' $sources_list
-  sed -i -E 's#https?://security\.debian\.org#https://mirrors.aliyun.com/debian-security#g' $sources_lis
+  sed -i -E 's#https?://security\.debian\.org#https://mirrors.aliyun.com/debian-security#g' $sources_list
   # backports
   sed -i -E 's#https?://[^/]+/debian.*-backports#https://mirrors.aliyun.com/debian-backports#g' $sources_list
 }
