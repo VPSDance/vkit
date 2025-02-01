@@ -37,8 +37,13 @@ debian_sources() {
 
 aliyun() {
   backup_sources
+  # main
   sed -i -E 's#https?://[^/]+/debian#https://mirrors.aliyun.com/debian#g' $sources_list
+  # security
   sed -i -E 's#https?://[^/]+/debian-security#https://mirrors.aliyun.com/debian-security#g' $sources_list
+  sed -i -E 's#https?://security\.debian\.org#https://mirrors.aliyun.com/debian-security#g' $sources_lis
+  # backports
+  sed -i -E 's#https?://[^/]+/debian.*-backports#https://mirrors.aliyun.com/debian-backports#g' $sources_list
 }
 
 backup_sources() {
