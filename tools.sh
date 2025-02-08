@@ -463,7 +463,7 @@ with_sudo() {
   fi
 }
 
-# with_sudo install_deps
+with_sudo install_deps
 with_sudo download
 service=$(with_sudo gen_service)
 # echo -e "gen_service:\n$service"
