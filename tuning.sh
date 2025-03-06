@@ -84,62 +84,101 @@ ulimited_tuning() {
 # sysctl -a | grep mem
 tcp_tuning() {
   check_sysctl
-  # incoming connections
+
+  # === 连接队列优化 ===
+  # TCP 连接等待 accept 的队列最大长度
   sed -i '/net.core.somaxconn/d' "$sysctl_conf"
-  echo 'net.core.somaxconn=65535' >> "$sysctl_conf"
-  # 保持time_wait套接字的最大数
-  sed -i '/net.ipv4.tcp_max_tw_buckets/d' "$sysctl_conf"
-  echo 'net.ipv4.tcp_max_tw_buckets=8192' >> "$sysctl_conf"
-  # 端口随机分配的范围
-  sed -i '/net.ipv4.ip_local_port_range/d' "$sysctl_conf"
-  echo 'net.ipv4.ip_local_port_range=10240 65000' >> "$sysctl_conf"
-  # TCP内存自动调整
-  sed -i '/net.ipv4.tcp_moderate_rcvbuf/d' "$sysctl_conf"
-  echo 'net.ipv4.tcp_moderate_rcvbuf=1' >> "$sysctl_conf"
-  # TCP窗口大小缩放
-  sed -i '/net.ipv4.tcp_window_scaling/d' "$sysctl_conf"
-  echo 'net.ipv4.tcp_window_scaling=1' >> "$sysctl_conf"
-  # TCP缓冲区
-  BDP='16777216' # 26214400
-  if [ -w /proc/sys/net/core/rmem_max ]; then
-    # sed -i '/net.ipv4.tcp_rmem/d' "$sysctl_conf"
-    # sed -i '/net.ipv4.tcp_wmem/d' "$sysctl_conf"
-    # echo "net.ipv4.tcp_rmem=4096 131072 $BDP" >> "$sysctl_conf"
-    # echo "net.ipv4.tcp_wmem=4096 16384 $BDP" >> "$sysctl_conf"
-    sed -i '/net.core.rmem_max/d' "$sysctl_conf"
-    sed -i '/net.core.wmem_max/d' "$sysctl_conf"
-    echo "net.core.rmem_max=$BDP" >> "$sysctl_conf"
-    echo "net.core.wmem_max=$BDP" >> "$sysctl_conf"
-    sed -i '/net.core.rmem_default/d' "$sysctl_conf"
-    echo "net.core.rmem_default=$BDP" >> "$sysctl_conf" # 212992, `$BDP / 2`
-  fi
-  # TCP Fast Open
-  sed -i '/net.ipv4.tcp_fastopen/d' "$sysctl_conf"
-  echo 'net.ipv4.tcp_fastopen=1' >> "$sysctl_conf"
+  echo 'net.core.somaxconn=131072' >> "$sysctl_conf"
+  # 网卡接收队列的最大长度
   if [ -w /proc/sys/net/core/netdev_max_backlog ]; then
-    # 网卡设备将请求放入队列的最大长度(默认值1000)
     sed -i '/net.core.netdev_max_backlog/d' "$sysctl_conf"
     echo 'net.core.netdev_max_backlog=32768' >> "$sysctl_conf"
   fi
-  # 接受SYN同步包的最大客户端数量(默认值128)
+  # TCP 半连接(SYN 队列)的最大长度
   sed -i '/net.ipv4.tcp_max_syn_backlog/d' "$sysctl_conf"
-  echo 'net.ipv4.tcp_max_syn_backlog=8192' >> "$sysctl_conf"
-  # SYN洪水攻击保护, 可防范少量SYN攻击 (在syn_backlog队列满了之后才会触发)
-  sed -i '/net.ipv4.tcp_syncookies/d' "$sysctl_conf"
-  echo 'net.ipv4.tcp_syncookies=1' >> "$sysctl_conf"
-  # TCP失败重传次数(默认值15), 重传15次才彻底放弃, 适当改小,尽早释放资源
+  echo 'net.ipv4.tcp_max_syn_backlog=131072' >> "$sysctl_conf"
+
+  # === 连接状态管理 ===
+  # 保持 TIME_WAIT 套接字的最大数量
+  sed -i '/net.ipv4.tcp_max_tw_buckets/d' "$sysctl_conf"
+  echo 'net.ipv4.tcp_max_tw_buckets=1440000' >> "$sysctl_conf"
+  # TCP FIN 等待超时时间(默认60秒)
+  sed -i '/net.ipv4.tcp_fin_timeout/d' "$sysctl_conf"
+  echo 'net.ipv4.tcp_fin_timeout=20' >> "$sysctl_conf"
+
+  # === 传输与性能优化 ===
+  # TCP 窗口缩放支持
+  sed -i '/net.ipv4.tcp_window_scaling/d' "$sysctl_conf"
+  echo 'net.ipv4.tcp_window_scaling=1' >> "$sysctl_conf"
+  # TCP 接收缓冲区自动调整
+  sed -i '/net.ipv4.tcp_moderate_rcvbuf/d' "$sysctl_conf"
+  echo 'net.ipv4.tcp_moderate_rcvbuf=1' >> "$sysctl_conf"
+  # TCP 缓冲区大小(接收和发送)
+  # est_bandwidth_mbps=900; est_rtt_ms=75  # 预估网络BDP # 带宽 Mbps, 平均RTT延迟 ms
+  # est_bdp_bytes=$((est_bandwidth_mbps * 1000000 / 8 * est_rtt_ms / 1000))
+  # BDP=$((est_bdp_bytes * 2))  # 2倍BD
+  # echo "基于BDP设置缓冲区: $((BDP / 1024 / 1024))MB, BDP: $BDP"
+  BDP='16777216' # 16777216(16M) min:4194304(4M) max: 67108864(64M)
+  if [ -w /proc/sys/net/core/rmem_max ]; then
+    sed -i '/net.ipv4.tcp_rmem/d' "$sysctl_conf"
+    sed -i '/net.ipv4.tcp_wmem/d' "$sysctl_conf"
+    echo "net.ipv4.tcp_rmem=8192 262144 $BDP" >> "$sysctl_conf" # 最小 默认 最大
+    echo "net.ipv4.tcp_wmem=4096 16384 $BDP" >> "$sysctl_conf"  # 最小 默认 最大
+    
+    sed -i '/net.core.rmem_max/d' "$sysctl_conf"
+    sed -i '/net.core.wmem_max/d' "$sysctl_conf"
+    echo "net.core.rmem_max=$BDP" >> "$sysctl_conf"  # 接收缓冲区最大值
+    echo "net.core.wmem_max=$BDP" >> "$sysctl_conf"  # 发送缓冲区最大值
+    
+    sed -i '/net.core.rmem_default/d' "$sysctl_conf"
+    echo "net.core.rmem_default=262144" >> "$sysctl_conf"  # 接收缓冲区默认值
+    
+    sed -i '/net.core.wmem_default/d' "$sysctl_conf"
+    echo "net.core.wmem_default=16384" >> "$sysctl_conf"   # 发送缓冲区默认值
+  fi
+  # TCP Fast Open(加速连接建立)
+  sed -i '/net.ipv4.tcp_fastopen/d' "$sysctl_conf"
+  echo 'net.ipv4.tcp_fastopen=3' >> "$sysctl_conf" # 3 客户端和服务器端
+  # TCP 选择性确认(SACK)
+  sed -i '/net.ipv4.tcp_sack/d' "$sysctl_conf"
+  echo 'net.ipv4.tcp_sack=1' >> "$sysctl_conf"
+  # TCP 慢启动优化(关闭空闲后重启慢启动)
+  sed -i '/net.ipv4.tcp_slow_start_after_idle/d' "$sysctl_conf"
+  echo 'net.ipv4.tcp_slow_start_after_idle=0' >> "$sysctl_conf"
+
+
+  # === 端口与重传优化 ===
+  # 本地端口范围(用于随机分配)
+  sed -i '/net.ipv4.ip_local_port_range/d' "$sysctl_conf"
+  echo 'net.ipv4.ip_local_port_range=10240 65000' >> "$sysctl_conf"
+  # TCP 失败重传次数
   sed -i '/net.ipv4.tcp_retries2/d' "$sysctl_conf"
-  echo 'net.ipv4.tcp_retries2=8' >> "$sysctl_conf"
-  # 放弃建立连接之前发送SYN包的数量(默认值6) 负载大且网络状况好的情况下建议更小
+  echo 'net.ipv4.tcp_retries2=5' >> "$sysctl_conf" # 默认 8->5
+  # 发送 SYN 的重试次数(建立连接)
   sed -i '/net.ipv4.tcp_syn_retries/d' "$sysctl_conf"
   echo 'net.ipv4.tcp_syn_retries=3' >> "$sysctl_conf"
-  # 放弃连接之前所送出的 SYN+ACK 数目(默认值5)
+  # 发送 SYN+ACK 的重试次数(接受连接)
   sed -i '/net.ipv4.tcp_synack_retries/d' "$sysctl_conf"
   echo 'net.ipv4.tcp_synack_retries=3' >> "$sysctl_conf"
-  # 如果套接字由本端要求关闭, 保持FIN-WAIT-2状态的时间(默认值60)
-  sed -i '/net.ipv4.tcp_fin_timeout/d' "$sysctl_conf"
-  echo 'net.ipv4.tcp_fin_timeout=30' >> "$sysctl_conf"
-  # reload_sysctl
+  
+  # === 安全优化 ===
+  # SYN 洪水攻击保护
+  sed -i '/net.ipv4.tcp_syncookies/d' "$sysctl_conf"
+  echo 'net.ipv4.tcp_syncookies=1' >> "$sysctl_conf"
+  # 防止 TIME_WAIT 刺杀(RFC 1337)
+  sed -i '/net.ipv4.tcp_rfc1337/d' "$sysctl_conf"
+  echo 'net.ipv4.tcp_rfc1337=1' >> "$sysctl_conf"
+
+  # === TCP 保活设置 ===
+  # 保活探测开始前的空闲时间(默认7200秒)
+  sed -i '/net.ipv4.tcp_keepalive_time/d' "$sysctl_conf"
+  echo 'net.ipv4.tcp_keepalive_time=60' >> "$sysctl_conf"
+  # 保活探测次数(默认9次)
+  sed -i '/net.ipv4.tcp_keepalive_probes/d' "$sysctl_conf"
+  echo 'net.ipv4.tcp_keepalive_probes=6' >> "$sysctl_conf"
+  # 保活探测间隔(默认75秒)
+  sed -i '/net.ipv4.tcp_keepalive_intvl/d' "$sysctl_conf"
+  echo 'net.ipv4.tcp_keepalive_intvl=10' >> "$sysctl_conf"
 }
 with_sudo ulimited_tuning
 with_sudo tcp_tuning
