@@ -253,7 +253,7 @@ menu() {
     [6]="[推荐] 修改默认SSH Port端口 (减少被扫描风险)"
     [7]="增加 swap 分区 (虚拟内存)"
     [8]="调整 IPv4/IPv6 优先级, 启用/禁用IPv6"
-    [10]="安装/卸载工具 (xray/ss/snell等)"
+    [10]="安装/卸载工具 (xray/ss/hy2/realm/...)"
     [11]="使用 CF WARP 添加 IPv4/IPv6 网络"
     # [18]="安装 wireguard"
     [20]="检测 IP质量 (IPQuality)"
