@@ -94,6 +94,7 @@ Thanks to the following projects:
 - [HyperSpeed](https://github.com/veoco/bim-core)
 - [YABS](https://github.com/masonr/yet-another-bench-script)
 - [xykt/IPQuality](https://github.com/xykt/IPQuality)
+- [xykt/NetQuality](https://github.com/xykt/NetQuality)
 - [fscarmen/warp](https://gitlab.com/fscarmen/warp)
 - [RegionRestrictionCheck](https://github.com/lmc999/RegionRestrictionCheck)
 - [TikTokCheck](https://github.com/lmc999/TikTokCheck)

@@ -132,16 +132,20 @@ install_wireguard(){
   # curl -Ls $(raw 'ghproxy')/teddysun/across/master/wireguard.sh | bash -s -- -n
 }
 unlock_test() {
-  info "bash <(curl -Lso- "$(raw '')/lmc999/RegionRestrictionCheck/main/check.sh")"
+  info "bash <(curl -L -s check.unlock.media)"
   bash <(curl -Lso- ${SH}/unlockTest.sh)
 }
 tiktok_test() {
   info "bash <(curl -Lso- "$(raw '')/lmc999/TikTokCheck/main/tiktok.sh")"
   bash <(curl -Lso- "$(raw 'sh')/lmc999/TikTokCheck/main/tiktok.sh")
 }
-ipquality_test() {
-  info "bash <(curl -sL IP.Check.Place)"
-  bash <(curl -sL IP.Check.Place)
+ipquality() {
+  info "bash <(curl -Ls IP.Check.Place)"
+  bash <(curl -Ls IP.Check.Place) -y
+}
+netquality() {
+  info "bash <(curl -Ls Net.Check.Place)"
+  bash <(curl -Ls Net.Check.Place) -y
 }
 bench() { bash <(curl -Lso- ${SH}/bench.sh); }
 # https://github.com/veoco/bim-core/
@@ -249,27 +253,21 @@ menu() {
     [6]="[推荐] 修改默认SSH Port端口 (减少被扫描风险)"
     [7]="增加 swap 分区 (虚拟内存)"
     [8]="调整 IPv4/IPv6 优先级, 启用/禁用IPv6"
-    [10]="安装/卸载 xray"
-    [11]="安装/卸载 shadowsocks"
-    [12]="安装/卸载 snell"
-    [13]="安装/卸载 hysteria 2"
-    [14]="安装/卸载 realm (端口转发工具)"
-    [15]="安装/卸载 gost (隧道/端口转发工具)"
-    [16]="安装/卸载 nali (IP查询工具)"
-    [17]="安装/卸载 ddns-go (DDNS工具)"
-    [18]="使用 CF WARP 添加 IPv4/IPv6 网络"
+    [10]="安装/卸载工具 (xray/ss/snell等)"
+    [11]="使用 CF WARP 添加 IPv4/IPv6 网络"
     # [18]="安装 wireguard"
+    [20]="检测 IP质量 (IPQuality)"
     [21]="检测 VPS流媒体解锁 (RegionRestrictionCheck)"
     [22]="检测 VPS信息/IO/网速 (Bench.sh)"
+    [23]="检测 性能/IO (YABS)"
+    [24]="检测 单线程/多线程网速 (i-abc/Speedtest)"
+    [25]="检测 网络质量 (NetQuality)"
+    [26]="检测 回程路由 (BestTrace)"
+    [27]="检测 回程路由 (NextTrace)"
+    [28]="检测 Tiktok解锁 (TikTokCheck)"
     # [23]="检测 VPS到国内网速 (Superspeed)"
     # [23]="检测 VPS到国内网速 (HyperSpeed)"
-    [23]="检测 单线程/多线程网速 (i-abc/Speedtest)"
-    [24]="检测 性能/IO (YABS)"
     # [25]="检测 VPS信息/IO/路由 (LemonBench)"
-    [25]="检测 回程路由 (BestTrace)"
-    [26]="检测 回程路由 (NextTrace)"
-    [27]="检测 Tiktok解锁 (TikTokCheck)"
-    [28]="检测 IP质量 (IPQuality)"
     # [29]="性能测试 (UnixBench)"
     # [31]="DD重装Linux系统"
     # [100]=""
@@ -284,30 +282,99 @@ menu() {
     break
   done
   main="${AR[num]}"
-  installs=(10 11 12 13 14 15 16 17)
-  if [[ " ${installs[@]} " =~ " ${num} " ]]; then
-    install_menu
+  
+  if [[ "$num" == "10" ]]; then
+    clear
+    tools_menu
+    return
   fi
 }
-install_menu() {
-  # clear
-  info "$main, 请选择: "
-  local AR=(
-    [0]='返回'
-    [1]='安装'
-    [2]='卸载'
+
+# 工具二级菜单
+tools_menu() {
+  info "安装/卸载工具，请选择:"
+  local ToolsAR=(
+    [0]="返回上级菜单"
+    [1]="xray"
+    [2]="shadowsocks"
+    [3]="snell"
+    [4]="hysteria 2"
+    [5]="realm (端口转发工具)"
+    [6]="gost (隧道/端口转发工具)"
+    [7]="nali (IP查询工具)"
+    [8]="ddns-go (DDNS工具)"
   )
-  for i in "${!AR[@]}"; do
-    success "$i." "${AR[i]}"
+  for i in "${!ToolsAR[@]}"; do
+    success "$i." "${ToolsAR[i]}"
   done
+
   while :; do
-    read -p "输入数字以选择: " inum
-    [[ -n "${AR[inum]}" ]] || { danger "invalid number"; continue; }
+    read -p "输入数字以选择工具:" tool_num
+    [[ $tool_num =~ ^[0-9]+$ ]] || { danger "请输入正确的数字"; continue; }
+    [[ -n "${ToolsAR[tool_num]}" ]] || { danger "无效的选项"; continue; }
     break
   done
-  if [[ "$inum" == "0" ]]; then
-    clear; menu;
+  
+  if [[ "$tool_num" == "0" ]]; then
+    clear
+    menu
+    return
   fi
+  
+  local tool_name="${ToolsAR[tool_num]}"
+  tool_name=${tool_name%% (*}  # 移除括号内的描述
+  clear
+  info "$tool_name, 请选择:"
+  local ActionAR=(
+    [1]='安装'
+    [2]='卸载'
+    [0]='返回'
+  )
+  for i in "${!ActionAR[@]}"; do
+    success "$i." "${ActionAR[i]}"
+  done
+  
+  while :; do
+    read -p "输入操作选择:" action_num
+    [[ $action_num =~ ^[0-9]+$ ]] || { danger "请输入正确的数字"; continue; }
+    [[ -n "${ActionAR[action_num]}" ]] || { danger "无效的选项"; continue; }
+    break
+  done
+  
+  if [[ "$action_num" == "0" ]]; then
+    clear
+    tools_menu
+    return
+  fi
+  case "$tool_num" in
+    1)
+      [[ "$action_num" == "1" ]] && with_sudo install_xray || with_sudo uninstall "xray"
+      ;;
+    2)
+      [[ "$action_num" == "1" ]] && install_tool "ss" || with_sudo uninstall "ss"
+      ;;
+    3)
+      [[ "$action_num" == "1" ]] && install_tool "snell" || with_sudo uninstall "snell"
+      ;;
+    4)
+      [[ "$action_num" == "1" ]] && install_tool "hy2" || with_sudo uninstall "hy2"
+      ;;
+    5)
+      [[ "$action_num" == "1" ]] && install_tool "realm" || with_sudo uninstall "realm"
+      ;;
+    6)
+      [[ "$action_num" == "1" ]] && install_tool "gost" || with_sudo uninstall "gost"
+      ;;
+    7)
+      [[ "$action_num" == "1" ]] && install_tool "nali" || with_sudo uninstall "nali"
+      ;;
+    8)
+      [[ "$action_num" == "1" ]] && install_tool "ddns-go" || with_sudo uninstall "ddns-go"
+      ;;
+  esac
+  exit;
+  # clear
+  # tools_menu
 }
 
 main() {
@@ -321,31 +388,17 @@ main() {
   elif [[ "$num" == "6" ]]; then ssh_port
   elif [[ "$num" == "7" ]]; then add_swap
   elif [[ "$num" == "8" ]]; then ip46
-  elif [[ "$num" == "10" ]]; then 
-    [[ "$inum" == "1" ]] && with_sudo install_xray || with_sudo uninstall "xray";
-  elif [[ "$num" == "11" ]]; then
-    [[ "$inum" == "1" ]] && install_tool "ss" || with_sudo uninstall "ss";
-  elif [[ "$num" == "12" ]]; then
-    [[ "$inum" == "1" ]] && install_tool "snell" || with_sudo uninstall "snell";
-  elif [[ "$num" == "13" ]]; then
-    [[ "$inum" == "1" ]] && install_tool "hy2" || with_sudo uninstall "hy2";
-  elif [[ "$num" == "14" ]]; then
-    [[ "$inum" == "1" ]] && install_tool "realm" || with_sudo uninstall "realm";
-  elif [[ "$num" == "15" ]]; then
-    [[ "$inum" == "1" ]] && install_tool "gost" || with_sudo uninstall "gost";
-  elif [[ "$num" == "16" ]]; then
-    [[ "$inum" == "1" ]] && install_tool "nali" || with_sudo uninstall "nali";
-  elif [[ "$num" == "17" ]]; then
-    [[ "$inum" == "1" ]] && install_tool "ddns-go" || with_sudo uninstall "ddns-go";
-  elif [[ "$num" == "18" ]]; then install_wrap
+  # 10 tools
+  elif [[ "$num" == "11" ]]; then install_wrap
+  elif [[ "$num" == "20" ]]; then ipquality
   elif [[ "$num" == "21" ]]; then unlock_test
   elif [[ "$num" == "22" ]]; then with_sudo bench
-  elif [[ "$num" == "23" ]]; then with_sudo iabc_speedtest
-  elif [[ "$num" == "24" ]]; then yabs
-  elif [[ "$num" == "25" ]]; then with_sudo besttrace
-  elif [[ "$num" == "26" ]]; then with_sudo nexttrace
-  elif [[ "$num" == "27" ]]; then tiktok_test
-  elif [[ "$num" == "28" ]]; then ipquality_test
+  elif [[ "$num" == "23" ]]; then yabs
+  elif [[ "$num" == "24" ]]; then with_sudo iabc_speedtest
+  elif [[ "$num" == "25" ]]; then netquality
+  elif [[ "$num" == "26" ]]; then with_sudo besttrace
+  elif [[ "$num" == "27" ]]; then with_sudo nexttrace
+  elif [[ "$num" == "28" ]]; then tiktok_test
   # elif [[ "$num" == "29" ]]; then unix_bench
   # elif [[ "$num" == "31" ]]; then reinstall
   else exit
