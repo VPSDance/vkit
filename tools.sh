@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # Usage:
-# bash <(curl -Lso- https://sh.vps.dance/tools.sh) [snell|snell4|snell5|realm|gost|ss|nali|ddns-go|nexttrace|hy2]
+# bash <(curl -Lso- https://sh.vps.dance/tools.sh) [snell|snell4|snell5|realm|gost|ss|nali|ddns-go|nexttrace|hy2|miniserve]
 
 # Colors
 RED='\033[0;31m'
@@ -23,6 +23,10 @@ ipv4="$(curl -m 5 -fsL4 http://ipv4.ip.sb)"
 
 CURR_USER="$(whoami)"
 
+# Application categories
+AUTO_ENABLE_APPS="snell|ss|miniserve|ddns-go"  # Apps that auto-enable service
+AUTO_CONFIG_APPS="snell|ss|miniserve"          # Apps that prompt for config and auto-create
+
 prompt_yn () {
   while true; do
     read -p "$1 (y/N)" yn
@@ -32,6 +36,20 @@ prompt_yn () {
       * ) echo "Please answer yes(y) or no(n).";;
     esac
   done
+}
+
+prompt_input () {
+  local prompt="$1"
+  local default="$2"
+  local result
+  
+  if [[ -n "$default" ]]; then
+    read -p "$prompt [$default]: " result
+    echo "${result:-$default}"
+  else
+    read -p "$prompt: " result
+    echo "$result"
+  fi
 }
 init () {
   case "$name" in
@@ -135,8 +153,24 @@ init () {
         ;;
       esac
     ;;
+    miniserve)
+      app="miniserve"
+      file="/etc/systemd/system/miniserve.service"
+      repo="svenstaro/miniserve"
+      case $ARCH in
+        aarch64)
+          match="aarch64-unknown-linux-gnu"
+        ;;
+        armv7 | armv6l)
+          match="armv7-unknown-linux-gnueabihf"
+        ;;
+        *)
+         match="x86_64-unknown-linux-gnu"
+        ;;
+      esac
+    ;;
     *)
-      printf "${YELLOW}Please specify app_name (snell|snell4|snell5|realm|gost|ss|nali|ddns-go|nexttrace)\n\n${NC}";
+      printf "${YELLOW}Please specify app_name (snell|snell4|snell5|realm|gost|ss|nali|ddns-go|nexttrace|hy2|miniserve)\n\n${NC}";
       exit
     ;;
   esac
@@ -196,6 +230,9 @@ download () {
     nexttrace)
       rm -rf ./nexttrace_*
     ;;
+    miniserve)
+      rm -rf /usr/bin/miniserve ./miniserve
+    ;;
     # wtrace)
     #   not_support_ipv6 $app
     #   case $ARCH in
@@ -231,7 +268,7 @@ download () {
     realm)
       # curl -s https://api.github.com/repos/zhboner/realm/releases/latest | grep "browser_download_url.*" | cut -d : -f 2,3 | xargs wget -O ./realm {}; chmod +x realm
       if [[ `compgen -G "$temp_dir/realm*.tar.gz"` ]]; then 
-        tar xzvf "$temp_dir"/realm*.tar.gz -C "$temp_dir" && rm -f "$temp_dir"/realm*.tar.gz
+        tar xzf "$temp_dir"/realm*.tar.gz -C "$temp_dir" && rm -f "$temp_dir"/realm*.tar.gz
       fi
       mv "$temp_dir"/realm /usr/bin/realm && chmod +x /usr/bin/realm
     ;;
@@ -261,6 +298,9 @@ download () {
     nexttrace)
       mv "$temp_dir"/nexttrace_* /usr/bin/nexttrace && chmod +x /usr/bin/nexttrace
     ;;
+    miniserve)
+      mv "$temp_dir"/miniserve* /usr/bin/miniserve && chmod +x /usr/bin/miniserve
+    ;;
     *);;
   esac
   rm -rf "$temp_dir"
@@ -283,46 +323,61 @@ gen_service () {
     ddns-go)
       service='[Unit]\nDescription=ddns-go\n[Service]\nExecStart=/usr/bin/ddns-go "-l" ":9876" "-f" "120" "-c" "/root/ddns-go.yaml"\nStartLimitInterval=5\nStartLimitBurst=10\nRestart=always\nRestartSec=120\n[Install]\nWantedBy=multi-user.target\n'
     ;;
+    miniserve)
+      echo -e "${GREEN}\n[Configure miniserve]${NC}"
+      miniserve_dir=$(prompt_input "Directory to serve" "/opt/files")
+      miniserve_port=$(prompt_input "Port" "8090")
+      
+      mkdir -p "$miniserve_dir" # Create directory
+      
+      # Build ExecStart command
+      local exec_cmd="/usr/bin/miniserve \"$miniserve_dir\" -p $miniserve_port --hide-theme-selector --hide-version-footer --index index.html"
+      
+      service="[Unit]\nDescription=miniserve file server\nAfter=network.target\n[Service]\nType=simple\nRestart=on-failure\nRestartSec=5\nExecStart=$exec_cmd\n[Install]\nWantedBy=multi-user.target\n"
+    ;;
   esac
   if [[ -n "$service" ]]; then
-    echo -e "${GREEN}\n[Generate service]${NC}" >&2
-    echo -e "$service" >&2
+    echo -e "${GREEN}\n[Generate service]${NC}\n/etc/systemd/system/$app.service"
 
     echo -e "$service" > "/etc/systemd/system/$app.service"
     systemctl daemon-reload
-    systemctl enable "$app"
-
-    echo "$service"
+    # Only auto-enable service for specific apps
+    if [[ "$app" =~ ^($AUTO_ENABLE_APPS)$ ]]; then
+      systemctl enable "$app"
+    fi
   fi
 }
 gen_config () {
   if ! [[ -n "$file" ]]; then return; fi # no config path
-  # if [[ -f "$file" ]]; then
-  #   if ! prompt_yn "\"$file\" already exists, do you want to overwrite it?"; then return; fi
-  # else
-  #   if ! prompt_yn "Do you want to create \"$file\"?"; then return; fi
-  # fi
-  # read -p "Specify port number: " port
-  # while [[ ! ${port} =~ ^[0-9]+$ ]]; do
-  #   echo "Please enter number of port:"
-  #   read port
-  # done
   # port=$(( ${RANDOM:0:4} + 10000 )) # random 10000-20000
-  port="${port:-1234}"
-  pass=$(openssl rand -base64 32 | tr -dc A-Za-z0-9 | cut -b1-16)
-  # conf=('{'
-  # '}')
-  # conf="$(printf "%s\n" "${conf[@]}")"
-  # conf="$(
-  #   echo '{'
-  #   echo '}'
-  # )"
+  # Prompt for configuration parameters
+  case "$app" in
+    snell|snell4|snell5)
+      echo -e "${GREEN}\n[Configure $app]${NC}"
+      port=$(prompt_input "Port" "1234")
+      pass=$(prompt_input "Password (leave empty for auto-generate)" "")
+      if [[ -z "$pass" ]]; then
+        pass=$(openssl rand -base64 32 | tr -dc A-Za-z0-9 | cut -b1-16)
+      fi
+    ;;
+    ss)
+      echo -e "${GREEN}\n[Configure Shadowsocks]${NC}"
+      port=$(prompt_input "Port" "1234")
+      pass=$(prompt_input "Password (leave empty for auto-generate)" "")
+      if [[ -z "$pass" ]]; then
+        pass=$(openssl rand -base64 32 | tr -dc A-Za-z0-9 | cut -b1-16)
+      fi
+    ;;
+    *)
+      # Use default values
+      port="${port:-1234}"
+      pass=$(openssl rand -base64 32 | tr -dc A-Za-z0-9 | cut -b1-16)
+    ;;
+  esac
+  
   case "$app" in
     snell)
       conf="[snell-server]\nlisten = ::0:$port\nipv6 = false\npsk = $pass\nobfs = tls"
-    ;;
-    snell4)
-      conf="[snell-server]\nlisten = ::0:$port\nipv6 = false\npsk = $pass" #v4
     ;;
     realm)
       conf=(''
@@ -378,53 +433,73 @@ gen_config () {
       conf="$(printf "%s\n" "${conf[@]}")"
     ;;
   esac
-  # echo "--- file: $file, conf: $conf"
+  
+  # Handle config file creation or display
   if [[ -n "$file" && -n "$conf" ]]; then
-    echo -e "${GREEN}\n[Create config file]${NC} \"$file\", for example:"
-    echo -e "$conf"
+    if [[ "$app" =~ ^($AUTO_CONFIG_APPS)$ ]]; then
+      echo -e "${GREEN}\n[Create config file]${NC} \"$file\""
+      echo -e "$conf" > "$file"
+      echo -e "${YELLOW}Configuration saved to: $file${NC}"
+    else
+      echo -e "${GREEN}\n[Config example]${NC} \"$file\""
+      echo -e "$conf"
+    fi
   fi
+  
   if [[ -f "/root/realm.json" && "$app" == "realm" ]]; then
     printf "\n%b\n" "${YELLOW}Convert Realm1 to Realm2 config${NC}: realm convert realm.json > realm.toml";
   fi
 }
 finally () {
-  local service="$*"
   local ip=`curl -Ls ip.sb || echo 'localhost'`;
-  # echo -e "finally: $service"
 
-  if [[ -n "$service" ]]; then
-    echo -e "${GREEN}\n[Enable and start service]${NC}"
-  else
-    echo -e "${GREEN}\n[Usage]${NC}"
-  fi
-  service_tips="${GREEN}systemctl enable $app; systemctl restart $app; systemctl status $app;${NC}"
+  # Only show service management for apps that have services
+  local has_service=false
   case "$app" in
-    hysteria-server)
-      tips="Please modify the ${RED}listen${NC}, ${RED}acme.domains${NC}, ${RED}acme.email${NC}, and ${RED}masquerade.proxy.url${NC} in the config file."
-      tips+="\nDocs: https://v2.hysteria.network/en/docs/getting-started/Server/"
-      tips+="\n\n$service_tips"
-    ;;
-    nali)
-      tips="nali update;\nping g.cn | nali;\ntraceroute 189.cn | nali"
-    ;;
-    # wtrace)
-    #   tips="worsttrace g.cn;"
-    # ;;
-    ddns-go)
-      systemctl restart $app;
-      tips="\nOpen http://$ip:9876 for configuration."
-      tips+="\n\n$service_tips"
-    ;;
-    nexttrace)
-      tips="nexttrace -T -f"
-    ;;
-    *)
-      tips="$service_tips"
+    snell|realm|gost|ss|ddns-go|miniserve|hysteria-server)
+      has_service=true
     ;;
   esac
-  # if [[ -n "$file" ]]; then
-  #   tips+="\n\n${GREEN}[Config file]${NC} \"$file\"\n"
-  # fi
+
+  if [[ "$has_service" == true ]]; then
+    echo -e "${GREEN}\n[Service management]${NC}"
+    
+    # Set service management tips
+    service_tips=""
+    if [[ ! "$app" =~ ^($AUTO_ENABLE_APPS)$ ]]; then
+      service_tips="systemctl enable $app     # Enable service\n"
+    fi
+    service_tips+="systemctl status $app     # Check status
+systemctl restart $app    # Restart service
+systemctl stop $app       # Stop service"
+  fi
+
+  case "$app" in
+    hysteria-server)
+      tips="Please modify the ${RED}listen${NC}, ${RED}acme.domains${NC}, ${RED}acme.email${NC}, and ${RED}masquerade.proxy.url${NC} in the config file.\nDocs: https://v2.hysteria.network/docs/getting-started/Server/\n\n$service_tips"
+    ;;
+    nali)
+      tips="Usage: nali update; ping g.cn | nali"
+    ;;
+    ddns-go)
+      systemctl restart $app;
+      tips="Server running at: http://$ip:9876\n\n$service_tips"
+    ;;
+    nexttrace)
+      tips="Usage: nexttrace -T -f"
+    ;;
+    miniserve)
+      systemctl restart $app;
+      # Extract port from service file
+      local port=$(grep -o 'miniserve.*-p [0-9]*' "/etc/systemd/system/$app.service" | grep -o '[0-9]*' | head -1)
+      tips="Server running at: http://$ip:${port:-8090}\n\n$service_tips"
+    ;;
+    *)
+      if [[ "$has_service" == true ]]; then
+        tips="$service_tips"
+      fi
+    ;;
+  esac
   if [[ -n "$tips" ]]; then
     echo -e "$tips\n"
   fi
@@ -441,7 +516,7 @@ with_sudo() {
 
   local cmd
   if [[ "$(type -t "$1")" == "function" ]]; then
-    local declare_vars="$(declare -p CURR_USER OS ARCH DISTRO name prerelease debug ipv4 app file repo match RED GREEN YELLOW BLUE CYAN PURPLE BOLD NC 2>/dev/null)"
+    local declare_vars="$(declare -p CURR_USER OS ARCH DISTRO name prerelease debug ipv4 app file repo match AUTO_ENABLE_APPS AUTO_CONFIG_APPS RED GREEN YELLOW BLUE CYAN PURPLE BOLD NC 2>/dev/null)"
     local declare_funcs="$(declare -f)"
     cmd="$declare_vars; $declare_funcs; $1 "'"${@:2}"'
   else
@@ -451,15 +526,12 @@ with_sudo() {
   if [[ $EUID -ne 0 ]]; then
     sudo bash -c "$cmd" -- "$@" < /dev/tty
   else
-    bash -c "$cmd" -- "$@" -- "$@"
+    bash -c "$cmd" -- "$@"
   fi
 }
 
 with_sudo install_deps
 with_sudo download
-service=$(with_sudo gen_service)
-# echo -e "gen_service:\n$service"
-# with_sudo echo "-- $service"
-# with_sudo echo -e "$service"
+with_sudo gen_service
 with_sudo gen_config
-with_sudo finally "$service"
+with_sudo finally
