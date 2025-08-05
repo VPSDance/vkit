@@ -37,17 +37,6 @@ bash <(curl -Lso- https://sh.vps.dance/ssh.sh) port
 bash <(curl -Lso- https://sh.vps.dance/ip46.sh)
 ```
 
-- debian sources
-
-```sh
-# Switch to Aliyun mirror (recommended for users in China)
-bash <(curl -Lso- https://sh.vps.dance/sources.sh) aliyun
-# Switch to Debian 12 (bookworm) official sources
-bash <(curl -Lso- https://sh.vps.dance/sources.sh) debian12
-# Switch to Debian 11 (bullseye) official sources
-bash <(curl -Lso- https://sh.vps.dance/sources.sh) debian11
-```
-
 - install ddns-go
 
 ```sh
@@ -66,10 +55,34 @@ bash <(curl -Lso- https://sh.vps.dance/tools.sh) gost -p
 bash <(curl -Lso- https://sh.vps.dance/tools.sh) realm -p
 ```
 
+- install miniserve
+
+```sh
+bash <(curl -Lso- https://sh.vps.dance/tools.sh) miniserve
+```
+
+- install snell
+
+```sh
+bash <(curl -Lso- https://sh.vps.dance/tools.sh) snell # v3
+bash <(curl -Lso- https://sh.vps.dance/tools.sh) snell5 # v5
+```
+
 - autoBestTrace
 
 ```sh
 bash <(curl -Lso- https://sh.vps.dance/autoBestTrace.sh)
+```
+
+- debian sources
+
+```sh
+# Switch to Aliyun mirror (recommended for users in China)
+bash <(curl -Lso- https://sh.vps.dance/sources.sh) aliyun
+# Switch to Debian 12 (bookworm) official sources
+bash <(curl -Lso- https://sh.vps.dance/sources.sh) debian12
+# Switch to Debian 11 (bullseye) official sources
+bash <(curl -Lso- https://sh.vps.dance/sources.sh) debian11
 ```
 
 - paste text and share
@@ -110,9 +123,10 @@ Thanks to the following projects:
 - [BestTrace](https://www.ipip.net/product/client.html)
 - [SuperBench](https://github.com/oooldking/script)
 - [hysteria2](https://github.com/apernet/hysteria)
-<!-- - [ss-rust](https://github.com/shadowsocks/shadowsocks-rust) -->
-<!-- - [Project X](https://github.com/XTLS/Xray-core) -->
-<!-- - snell -->
+- [miniserve](https://github.com/svenstaro/miniserve)
+  <!-- - [ss-rust](https://github.com/shadowsocks/shadowsocks-rust) -->
+  <!-- - [Project X](https://github.com/XTLS/Xray-core) -->
+  <!-- - snell -->
 
 <!--
 update cache:
