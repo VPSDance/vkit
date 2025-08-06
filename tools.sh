@@ -26,6 +26,7 @@ CURR_USER="$(whoami)"
 # Application categories
 AUTO_ENABLE_APPS="snell|ss|miniserve|ddns-go"  # Apps that auto-enable service
 AUTO_CONFIG_APPS="snell|ss|miniserve"          # Apps that prompt for config and auto-create
+HAS_SERVICE_APPS="snell|realm|gost|ss|ddns-go|miniserve|hysteria-server"  # Apps that have systemd services
 
 prompt_yn () {
   while true; do
@@ -454,14 +455,7 @@ finally () {
   local ip=`curl -Ls ip.sb || echo 'localhost'`;
 
   # Only show service management for apps that have services
-  local has_service=false
-  case "$app" in
-    snell|realm|gost|ss|ddns-go|miniserve|hysteria-server)
-      has_service=true
-    ;;
-  esac
-
-  if [[ "$has_service" == true ]]; then
+  if [[ "$app" =~ ^($HAS_SERVICE_APPS)$ ]]; then
     echo -e "${GREEN}\n[Service management]${NC}"
     
     # Set service management tips
@@ -474,6 +468,11 @@ systemctl restart $app    # Restart service
 systemctl stop $app       # Stop service"
   fi
 
+  # Auto-restart services for AUTO_ENABLE_APPS
+  if [[ "$app" =~ ^($AUTO_ENABLE_APPS)$ ]]; then
+    systemctl restart $app
+  fi
+
   case "$app" in
     hysteria-server)
       tips="Please modify the ${RED}listen${NC}, ${RED}acme.domains${NC}, ${RED}acme.email${NC}, and ${RED}masquerade.proxy.url${NC} in the config file.\nDocs: https://v2.hysteria.network/docs/getting-started/Server/\n\n$service_tips"
@@ -482,20 +481,18 @@ systemctl stop $app       # Stop service"
       tips="Usage: nali update; ping g.cn | nali"
     ;;
     ddns-go)
-      systemctl restart $app;
       tips="Server running at: http://$ip:9876\n\n$service_tips"
     ;;
     nexttrace)
       tips="Usage: nexttrace -T -f"
     ;;
     miniserve)
-      systemctl restart $app;
       # Extract port from service file
       local port=$(grep -o 'miniserve.*-p [0-9]*' "/etc/systemd/system/$app.service" | grep -o '[0-9]*' | head -1)
       tips="Server running at: http://$ip:${port:-8090}\n\n$service_tips"
     ;;
     *)
-      if [[ "$has_service" == true ]]; then
+      if [[ "$app" =~ ^($HAS_SERVICE_APPS)$ ]]; then
         tips="$service_tips"
       fi
     ;;
@@ -516,7 +513,7 @@ with_sudo() {
 
   local cmd
   if [[ "$(type -t "$1")" == "function" ]]; then
-    local declare_vars="$(declare -p CURR_USER OS ARCH DISTRO name prerelease debug ipv4 app file repo match AUTO_ENABLE_APPS AUTO_CONFIG_APPS RED GREEN YELLOW BLUE CYAN PURPLE BOLD NC 2>/dev/null)"
+    local declare_vars="$(declare -p CURR_USER OS ARCH DISTRO name prerelease debug ipv4 app file repo match AUTO_ENABLE_APPS AUTO_CONFIG_APPS HAS_SERVICE_APPS RED GREEN YELLOW BLUE CYAN PURPLE BOLD NC 2>/dev/null)"
     local declare_funcs="$(declare -f)"
     cmd="$declare_vars; $declare_funcs; $1 "'"${@:2}"'
   else
