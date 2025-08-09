@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # Usage:
-# bash <(curl -Lso- https://raw.githubusercontent.com/VPSDance/scripts/main/superBench.sh)
+# bash <(curl -Lso- https://raw.githubusercontent.com/VPSDance/vkit/main/superBench.sh)
 # Reference:
 # https://github.com/oooldking/script
 

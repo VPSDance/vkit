@@ -2,7 +2,7 @@
 
 # Usage:
 # bash <(curl -Lso- https://sh.vps.dance/autoNexttrace.sh)
-# bash <(curl -Lso- https://cdn.jsdelivr.net/gh/VPSDance/scripts@main/autoNexttrace.sh)
+# bash <(curl -Lso- https://cdn.jsdelivr.net/gh/VPSDance/vkit@main/autoNexttrace.sh)
 
 footer() {
   BLUE="\033[34m"; NC='\033[0m'
