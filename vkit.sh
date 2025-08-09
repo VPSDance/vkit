@@ -52,7 +52,7 @@ raw() {
   fi
 }
 # echo $(raw 'ghproxy')
-# curl -Ls "$(raw '')/VPSDance/scripts/main/ssh.sh"
+# curl -Ls "$(raw '')/VPSDance/vkit/main/ssh.sh"
 
 next() { printf "%-37s\n" "-" | sed 's/\s/-/g'; }
 
@@ -87,7 +87,7 @@ install_deps() {
     Debian*|Ubuntu*)
       apt update -y;
       apt install -y curl wget htop zip unzip xz-utils gzip ca-certificates; # zip unzip xz-utils gzip
-      # ifconfig/netstat dig/nslookup ping/traceroute telnet/tcpdump nc
+      # ifconfig/netstat dig/nslookup ping nc
       apt install -y net-tools dnsutils iputils-ping mtr traceroute telnet tcpdump netcat-openbsd; 
       apt install -y nmap; # nping
       apt install -y python3 python3-pip;
@@ -234,6 +234,10 @@ uninstall() {
       un_service;
       rm -rf /root/ddns-go.yaml /usr/bin/ddns-go
     ;;
+    miniserve)
+      un_service;
+      rm -rf /usr/bin/miniserve
+    ;;
    *)
     echo "$@"; exit;
    ;;
@@ -248,12 +252,12 @@ menu() {
     [1]="[推荐] 配置SSH Public Key (SSH免密登录)"
     [2]="[推荐] 终端优化 (颜色美化/上下键查找历史)"
     [3]="[推荐] 安装并开启 BBR"
-    [4]="[推荐] 安装常用软件 (ping/mtr/traceroute/nping/nc/tcpdump/python3)"
-    [5]="[推荐] 系统优化 (TCP网络优化/资源限制优化)"
+    [4]="[推荐] 系统优化 (TCP网络优化/资源限制优化)"
+    [5]="[推荐] 安装常用软件 (mtr/traceroute/nping/nc/tcpdump/python3)"
     [6]="[推荐] 修改默认SSH Port端口 (减少被扫描风险)"
     [7]="增加 swap 分区 (虚拟内存)"
     [8]="调整 IPv4/IPv6 优先级, 启用/禁用IPv6"
-    [10]="安装/卸载工具 (xray/ss/hy2/realm/...)"
+    [10]="安装/卸载工具 (xray/ss/hy2/realm/ddns-go/...)"
     [11]="使用 CF WARP 添加 IPv4/IPv6 网络"
     # [18]="安装 wireguard"
     [20]="检测 IP质量 (IPQuality)"
@@ -297,12 +301,13 @@ tools_menu() {
     [0]="返回上级菜单"
     [1]="xray"
     [2]="shadowsocks"
-    [3]="snell"
+    [3]="snell 3"
     [4]="hysteria 2"
     [5]="realm (端口转发工具)"
     [6]="gost (隧道/端口转发工具)"
-    [7]="nali (IP查询工具)"
-    [8]="ddns-go (DDNS工具)"
+    [7]="ddns-go (DDNS工具)"
+    [8]="nali (IP查询工具)"
+    [9]="miniserve (HTTP 文件服务器)"
   )
   for i in "${!ToolsAR[@]}"; do
     success "$i." "${ToolsAR[i]}"
@@ -366,25 +371,25 @@ tools_menu() {
       [[ "$action_num" == "1" ]] && install_tool "gost" || with_sudo uninstall "gost"
       ;;
     7)
-      [[ "$action_num" == "1" ]] && install_tool "nali" || with_sudo uninstall "nali"
+      [[ "$action_num" == "1" ]] && install_tool "ddns-go" || with_sudo uninstall "ddns-go"
       ;;
     8)
-      [[ "$action_num" == "1" ]] && install_tool "ddns-go" || with_sudo uninstall "ddns-go"
+      [[ "$action_num" == "1" ]] && install_tool "nali" || with_sudo uninstall "nali"
+      ;;
+    9)
+      [[ "$action_num" == "1" ]] && install_tool "miniserve" || with_sudo uninstall "miniserve"
       ;;
   esac
   exit;
-  # clear
-  # tools_menu
 }
 
 main() {
   clear
-  # header
   if [[ "$num" == "1" ]]; then ssh_key
   elif [[ "$num" == "2" ]]; then bashrc
   elif [[ "$num" == "3" ]]; then with_sudo install_bbr
-  elif [[ "$num" == "4" ]]; then with_sudo install_deps
-  elif [[ "$num" == "5" ]]; then tuning
+  elif [[ "$num" == "4" ]]; then tuning
+  elif [[ "$num" == "5" ]]; then with_sudo install_deps
   elif [[ "$num" == "6" ]]; then ssh_port
   elif [[ "$num" == "7" ]]; then add_swap
   elif [[ "$num" == "8" ]]; then ip46
