@@ -52,6 +52,18 @@ prompt_input () {
     echo "$result"
   fi
 }
+
+# Generate a random alphanumeric password of given length (default: 16)
+gen_password () {
+  local length=${1:-16}
+  if command -v openssl >/dev/null 2>&1; then
+    openssl rand -base64 $((length*2)) | tr -dc 'A-Za-z0-9' | head -c "$length"
+    echo
+  else
+    tr -dc 'A-Za-z0-9' </dev/urandom | head -c "$length"
+    echo
+  fi
+}
 init () {
   case "$name" in
     snell | snell4 | snell5)
@@ -358,7 +370,7 @@ gen_config () {
       port=$(prompt_input "Port" "1234")
       pass=$(prompt_input "Password (leave empty for auto-generate)" "")
       if [[ -z "$pass" ]]; then
-        pass=$(openssl rand -base64 32 | tr -dc A-Za-z0-9 | cut -b1-16)
+        pass=$(gen_password 8)
       fi
     ;;
     ss)
@@ -366,13 +378,13 @@ gen_config () {
       port=$(prompt_input "Port" "1234")
       pass=$(prompt_input "Password (leave empty for auto-generate)" "")
       if [[ -z "$pass" ]]; then
-        pass=$(openssl rand -base64 32 | tr -dc A-Za-z0-9 | cut -b1-16)
+        pass=$(gen_password 8)
       fi
     ;;
     *)
       # Use default values
       port="${port:-1234}"
-      pass=$(openssl rand -base64 32 | tr -dc A-Za-z0-9 | cut -b1-16)
+      pass=$(gen_password 16)
     ;;
   esac
   
