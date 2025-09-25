@@ -221,7 +221,7 @@ uninstall() {
     ;;
     gost)
       un_service;
-      rm -rf /root/gost.json /usr/bin/gost
+      rm -rf /root/gost.yaml /root/gost.json /usr/bin/gost
     ;;
     hysteria-server)
       un_service;

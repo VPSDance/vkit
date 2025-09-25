@@ -98,14 +98,17 @@ init () {
     ;;
     gost)
       app="gost"
-      file="/root/gost.json"
-      repo="ginuerzh/gost"
+      file="/root/gost.yaml"
+      repo="go-gost/gost"
       case $ARCH in
-        aarch64)
-          match="linux-armv8"
+        aarch64 | arm64)
+          match="linux_arm64.tar.gz"
         ;;
-        *) #x86_64
-         match="linux-amd64"
+        i386 | i686)
+          match="linux_386.tar.gz"
+        ;;
+        *) # x86_64 and other amd64 variants
+          match="linux_amd64.tar.gz"
         ;;
       esac
     ;;
@@ -286,8 +289,9 @@ download () {
       mv "$temp_dir"/realm /usr/bin/realm && chmod +x /usr/bin/realm
     ;;
     gost)
-      gzip -d "$temp_dir"/gost-*.gz
-      mv "$temp_dir"/gost-* /usr/bin/gost && chmod +x /usr/bin/gost
+      tar xzf "$temp_dir"/gost_*.tar.gz -C "$temp_dir"
+      mv "$temp_dir"/gost /usr/bin/gost && chmod +x /usr/bin/gost
+      rm -f "$temp_dir"/gost_*.tar.gz* "$temp_dir"/LICENSE "$temp_dir"/README* 2>/dev/null
     ;;
     ss)
       tar xJf "$temp_dir"/shadowsocks-*.xz -C "$temp_dir" && rm -f "$temp_dir"/shadowsocks-*.xz*
@@ -328,7 +332,7 @@ gen_service () {
       service='[Unit]\nDescription=realm\nAfter=network-online.target\nWants=network-online.target systemd-networkd-wait-online.service\n[Service]\nType=simple\nUser=root\nRestart=on-failure\nRestartSec=5s\nExecStart=/usr/bin/realm -c /root/realm.toml\n[Install]\nWantedBy=multi-user.target'
     ;;
     gost)
-      service='[Unit]\nDescription=gost\nAfter=network-online.target\nWants=network-online.target systemd-networkd-wait-online.service\n[Service]\nType=simple\nUser=root\nRestart=on-failure\nRestartSec=5s\nExecStart=/usr/bin/gost -C /root/gost.json\n[Install]\nWantedBy=multi-user.target'
+      service='[Unit]\nDescription=gost\nAfter=network-online.target\nWants=network-online.target systemd-networkd-wait-online.service\n[Service]\nType=simple\nUser=root\nRestart=on-failure\nRestartSec=5s\nExecStart=/usr/bin/gost -C /root/gost.yaml\n[Install]\nWantedBy=multi-user.target'
     ;;
     ss)
       service='[Unit]\nDescription=Shadowsocks\nAfter=network.target\n[Service]\nType=simple\nRestart=on-failure\nExecStart=/usr/bin/ssserver -c /root/ss.json\n[Install]\nWantedBy=multi-user.target\n'
@@ -416,17 +420,14 @@ gen_config () {
       conf="$(printf "%s\n" "${conf[@]}")"
     ;;
     gost)
-      conf=('{'
-        ' "Debug": true,'
-        ' "Retries": 0,'
-        ' "ServeNodes": ['
-        '   "tcp://:10002/1.1.1.1:443"'
-        ' ],'
-        ' "ChainNodes": ['
-        ' ],'
-        ' "Routes": ['
-        ' ]'
-      '}')
+      conf=('# Example generated via `gost -L http://:8080 -O yaml`'
+        'services:'
+        '  - name: http-proxy'
+        '    addr: ":8080"'
+        '    handler:'
+        '      type: http'
+        '    listener:'
+        '      type: tcp')
       conf="$(printf "%s\n" "${conf[@]}")"
     ;;
     ss)
@@ -502,6 +503,9 @@ systemctl stop $app       # Stop service"
       # Extract port from service file
       local port=$(grep -o 'miniserve.*-p [0-9]*' "/etc/systemd/system/$app.service" | grep -o '[0-9]*' | head -1)
       tips="Server running at: http://$ip:${port:-8090}\n\n$service_tips"
+    ;;
+    gost)
+      tips="Config path: /root/gost.yaml\nUse gost -L http://:8080 -O yaml > /root/gost.yaml to generate a starter config.\n\n$service_tips"
     ;;
     *)
       if [[ "$app" =~ ^($HAS_SERVICE_APPS)$ ]]; then
