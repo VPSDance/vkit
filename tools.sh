@@ -497,7 +497,7 @@ systemctl stop $app       # Stop service"
       tips="Server running at: http://$ip:9876\n\n$service_tips"
     ;;
     nexttrace)
-      tips="Usage: nexttrace -T -f"
+      tips="Usage: nexttrace -T <ip>"
     ;;
     miniserve)
       # Extract port from service file

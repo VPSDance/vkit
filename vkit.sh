@@ -238,6 +238,9 @@ uninstall() {
       un_service;
       rm -rf /usr/bin/miniserve
     ;;
+    nexttrace)
+      rm -rf /usr/bin/nexttrace
+    ;;
    *)
     echo "$@"; exit;
    ;;
@@ -308,6 +311,7 @@ tools_menu() {
     [7]="ddns-go (DDNS工具)"
     [8]="nali (IP查询工具)"
     [9]="miniserve (HTTP 文件服务器)"
+    [10]="nexttrace (路由测试)"
   )
   for i in "${!ToolsAR[@]}"; do
     success "$i." "${ToolsAR[i]}"
@@ -378,6 +382,9 @@ tools_menu() {
       ;;
     9)
       [[ "$action_num" == "1" ]] && install_tool "miniserve" || with_sudo uninstall "miniserve"
+      ;;
+    10)
+      [[ "$action_num" == "1" ]] && install_tool "nexttrace" || with_sudo uninstall "nexttrace"
       ;;
   esac
   exit;
