@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
-
-# sudo bash -c "bash <(curl -Lso- https://sh.vps.dance/p/vkit.sh)"
+# bash <(curl -Lso- https://sh.vps.dance/vkit.sh)
 
 # Colors
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[0;33m'; BLUE='\033[34m'; CYAN='\033[0;36m'; PURPLE='\033[35m'; BOLD='\033[1m'; NC='\033[0m';
