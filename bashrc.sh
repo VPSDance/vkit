@@ -10,6 +10,8 @@ success() { printf "${GREEN}%s${NC} ${@:2}\n" "$1"; }
 info() { printf "${BLUE}%s${NC} ${@:2}\n" "$1"; }
 danger() { printf "${RED}[x] %s${NC}\n" "$@"; }
 warn() { printf "${YELLOW}%s${NC}\n" "$@"; }
+# Keep stdio on tty for interactive reads when piped
+read_tty() { read -p "$1" "$2" </dev/tty; }
 
 CURR_USER="$(whoami)"
 with_sudo() {
@@ -73,7 +75,7 @@ menu() {
     success "$i." "${AR[i]}"
   done
   while :; do
-    read -p "输入数字以选择: " num
+    read_tty "输入数字以选择: " num
     [[ -n "${AR[num]}" ]] || {
       danger "invalid number"
       continue
