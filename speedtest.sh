@@ -10,6 +10,9 @@ info() { printf "${CYAN}%b${NC} ${@:2}\n" "$1"; }
 danger() { printf "\n${RED}[x] %b${NC}\n" "$@"; }
 warn() { printf "${YELLOW}%b${NC}\n" "$@"; }
 
+# Keep stdio on tty for interactive reads when piped
+read_tty() { read -p "$1" "$2" </dev/tty; }
+
 OS=$(uname -s) # Linux, FreeBSD, Darwin, MINGW64_NT-10.0-19045
 ARCH=$(uname -m) # x86_64, arm64/aarch64, i386
 DISTRO=$( ([[ -e "/usr/bin/yum" ]] && echo 'CentOS') || ([[ -e "/usr/bin/apt" ]] && echo 'Debian') || echo 'unknown' )
@@ -165,7 +168,7 @@ read_choice() {
   local choice
   while :; do
     #  [0-${#menu[@]}]
-    read -p "请输入选项: " choice
+    read_tty "请输入选项: " choice
     [[ $choice -ge 0 && $choice -le ${#menu[@]} ]] || { continue; }
     break
   done

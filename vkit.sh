@@ -9,6 +9,9 @@ info() { printf "${CYAN}%b${NC} ${@:2}\n" "$1"; }
 danger() { printf "\n${RED}[x] %b${NC}\n" "$@"; }
 warn() { printf "${YELLOW}%b${NC}\n" "$@"; }
 
+# Keep stdio on tty for interactive reads when piped
+read_tty() { read -p "$1" "$2" </dev/tty; }
+
 OS=$(uname -s) # Linux, FreeBSD, Darwin
 ARCH=$(uname -m) # x86_64, arm64, aarch64
 DISTRO=$( ([[ -e "/usr/bin/yum" ]] && echo 'CentOS') || ([[ -e "/usr/bin/apt" ]] && echo 'Debian') || echo 'unknown' )
@@ -154,7 +157,7 @@ iabc_speedtest() { bash <(curl -sL https://jihulab.com/i-abc/Speedtest/-/raw/mai
 # lemon_bench() { curl -fsSL http://ilemonra.in/LemonBenchIntl | bash -s fast; }
 yabs() {
   while :; do
-    read -p "输入Geekbench 版本 [默认=6, 可选:4/5/6]: " BENCH_VER
+    read_tty "输入Geekbench 版本 [默认=6, 可选:4/5/6]: " BENCH_VER
     BENCH_VER=${BENCH_VER:-6}
     [[ $BENCH_VER =~ ^[0-9]+$ ]] || {
       echo "invalid number"
@@ -175,7 +178,7 @@ yabs() {
     success "$i." "${AR[i]}"
   done
   while :; do
-    read -p "输入数字以选择: " snum
+    read_tty "输入数字以选择: " snum
     [[ -n "${AR[snum]}" ]] || {
       danger "invalid"
       continue
@@ -284,7 +287,7 @@ menu() {
   done
 
   while :; do
-    read -p "输入数字以选择:" num
+    read_tty "输入数字以选择:" num
     [[ $num =~ ^[0-9]+$ ]] || { danger "请输入正确的数字"; continue; }
     break
   done
@@ -318,7 +321,7 @@ tools_menu() {
   done
 
   while :; do
-    read -p "输入数字以选择工具:" tool_num
+    read_tty "输入数字以选择工具:" tool_num
     [[ $tool_num =~ ^[0-9]+$ ]] || { danger "请输入正确的数字"; continue; }
     [[ -n "${ToolsAR[tool_num]}" ]] || { danger "无效的选项"; continue; }
     break
@@ -344,7 +347,7 @@ tools_menu() {
   done
   
   while :; do
-    read -p "输入操作选择:" action_num
+    read_tty "输入操作选择:" action_num
     [[ $action_num =~ ^[0-9]+$ ]] || { danger "请输入正确的数字"; continue; }
     [[ -n "${ActionAR[action_num]}" ]] || { danger "无效的选项"; continue; }
     break

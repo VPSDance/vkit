@@ -9,6 +9,8 @@ GREEN='\033[0;32m'
 YELLOW='\033[0;33m'
 BOLD="\033[1m"
 NC='\033[0m'
+# Keep stdio on tty for interactive reads when piped
+read_tty() { read -p "$1" "$2" </dev/tty; }
 
 OS=$(uname -s) # Linux, FreeBSD, Darwin
 ARCH=$(uname -m) # x86_64, arm64/aarch64, i386, 
@@ -30,7 +32,7 @@ HAS_SERVICE_APPS="snell|realm|gost|ss|ddns-go|miniserve|hysteria-server"  # Apps
 
 prompt_yn () {
   while true; do
-    read -p "$1 (y/N)" yn
+    read_tty "$1 (y/N)" yn
     case "${yn:-${2:-N}}" in
       [Yy]* ) return 0;;
       [Nn]* ) return 1;;
@@ -45,10 +47,10 @@ prompt_input () {
   local result
   
   if [[ -n "$default" ]]; then
-    read -p "$prompt [$default]: " result
+    read_tty "$prompt [$default]: " result
     echo "${result:-$default}"
   else
-    read -p "$prompt: " result
+    read_tty "$prompt: " result
     echo "$result"
   fi
 }

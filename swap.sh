@@ -7,6 +7,8 @@ success() { printf "${GREEN}%s${NC} ${@:2}\n" "$1"; }
 info() { printf "${BLUE}%s${NC} ${@:2}\n" "$1"; }
 danger() { printf "${RED}[x] %s${NC}\n" "$@"; }
 warn() { printf "${YELLOW}%s${NC}\n" "$@"; }
+# Keep stdio on tty for interactive reads when piped
+read_tty() { read -p "$1" "$2" </dev/tty; }
 
 swap_file="/vd_swap"
 line_mark="# vd_swap"
@@ -80,7 +82,7 @@ menu() {
     success "$i." "${AR[i]}"
   done
   while :; do
-    read -p "输入数字以选择: " num
+    read_tty "输入数字以选择: " num
     [[ -n "${AR[num]}" ]] || {
       danger "invalid"
       continue
@@ -97,7 +99,7 @@ menu() {
     clear
     local swap_size
     while :; do
-      read -p "请输入swap大小 (单位为G): " swap_size
+      read_tty "请输入swap大小 (单位为G): " swap_size
       [[ $swap_size =~ ^[0-9]*\.?[0-9]+$ ]] || {
         echo "invalid number"
         continue

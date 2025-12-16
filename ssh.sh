@@ -2,6 +2,7 @@
 
 # Usage:
 # # bash <(curl -Lso- https://sh.vps.dance/ssh.sh) [key|port|pwd]
+# curl -fsSL https://sh.vps.dance/ssh.sh | bash -s -- [key|port|pwd]
 
 # DISTRO=$( ([[ -e "/usr/bin/yum" ]] && echo 'CentOS') || ([[ -e "/usr/bin/apt" ]] && echo 'Debian') || echo 'unknown' )
 # Colors
@@ -10,10 +11,12 @@ success() { printf "${GREEN}%b${NC} ${@:2}\n" "$1"; }
 info() { printf "${CYAN}%b${NC} ${@:2}\n" "$1"; }
 danger() { printf "\n${RED}[x] %b${NC}\n" "$@"; }
 warn() { printf "${YELLOW}%b${NC}\n" "$@"; }
+# Keep stdio on tty for interactive reads when piped
+read_tty() { read -p "$1" "$2" </dev/tty; }
 promptYn() {
   default=${2:-Y}
   while true; do
-    read -p "${1:-"Please answer"} ([Y]es, [N]o), default [$default] " yn
+    read_tty "${1:-"Please answer"} ([Y]es, [N]o), default [$default] " yn
     case "${yn:-$default}" in
     [Yy]*) return 0 ;;
     [Nn]*) return 1 ;;
@@ -136,7 +139,7 @@ ssh_pwd() {
     success "$i." "${AR[i]}"
   done
   while :; do
-    read -p "Please enter a number: " num
+    read_tty "Please enter a number: " num
     [[ $num =~ ^[0-9]+$ ]] || {
       danger "invalid number"
       continue
@@ -170,7 +173,7 @@ ssh_port() {
   # local port=$(( ${RANDOM:0:4} + 10000 )) # random 10000-20000
   # local port=$(shuf -i 10001-60000 -n 1); # echo $port
   local port='35653'
-  read -p "Please enter the SSH port [default=$port]: " _p && [ -n "$_p" ] && SSH_PORT=$_p || SSH_PORT=$port
+  read_tty "Please enter the SSH port [default=$port]: " _p && [ -n "$_p" ] && SSH_PORT=$_p || SSH_PORT=$port
   sed -i "s/#\?.*\Port\s*.*$/Port $SSH_PORT/" /etc/ssh/sshd_config
   # echo "Port $SSH_PORT" >> /etc/ssh/sshd_config;
   systemctl restart sshd
