@@ -58,6 +58,12 @@ raw() {
 # echo $(raw 'ghproxy')
 # curl -Ls "$(raw '')/VPSDance/vkit/main/ssh.sh"
 
+run_remote() {
+  local url="$1"; shift
+  # Suppress stty errors when stdin isn't a tty (e.g., curl | bash)
+  bash -c 'stty(){ command stty "$@" 2>/dev/null || true; }; source <(curl -Lso- "$1") "${@:2}"' -- "$url" "$@"
+}
+
 next() { printf "%-37s\n" "-" | sed 's/\s/-/g'; }
 
 # if (ver_lte 3 3.0); then echo 3; else echo 2; fi # ver_lte 2.5.7 3 && echo "yes" || echo "no"
@@ -106,8 +112,10 @@ install_deps() {
   esac
 }
 install_bbr() {
-  info "bash <(curl -Lso- "$(raw '')/teddysun/across/master/bbr.sh")"
-  bash <(curl -Lso- $(raw 'sh')/teddysun/across/master/bbr.sh)
+  local url
+  url="$(raw 'sh')/teddysun/across/master/bbr.sh"
+  info "bash <(curl -Lso- ${url})"
+  run_remote "$url"
 }
 ssh_key() { bash <(curl -Lso- ${SH}/ssh.sh); }
 bashrc() { bash <(curl -Lso- ${SH}/bashrc.sh); }
