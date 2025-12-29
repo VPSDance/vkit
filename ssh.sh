@@ -12,7 +12,7 @@ info() { printf "${CYAN}%b${NC} ${@:2}\n" "$1"; }
 danger() { printf "\n${RED}[x] %b${NC}\n" "$@"; }
 warn() { printf "${YELLOW}%b${NC}\n" "$@"; }
 # Keep stdio on tty for interactive reads when piped
-read_tty() { read -p "$1" "$2" </dev/tty; }
+read_tty() { read -r -p "$1" "$2" </dev/tty || read -r -p "$1" "$2"; }
 promptYn() {
   default=${2:-Y}
   while true; do
@@ -76,12 +76,12 @@ ssh_key() {
   for dir in "${dirs[@]}"; do
     setup_ssh_dir "$dir"
   done
-  echo "Paste your SSH public key (~/.ssh/id_rsa.pub):"
-  IFS= read -d '' -n 1 text
-  while IFS= read -d '' -n 1 -t 2 c; do
-    text+=$c
-  done
+  read_tty "Paste your SSH public key (~/.ssh/id_rsa.pub): " text
   text=$(echo "$text" | sed '/^$/d')
+  if [[ -z "$text" ]]; then
+    danger "Empty SSH public key."
+    return 1
+  fi
   # echo "public key=$text"
   # echo "$text" >> "${HOME}/.ssh/authorized_keys"
   # for line in $text; do echo "$line"; sed -i "/$line/d" test; done
