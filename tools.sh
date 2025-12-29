@@ -533,7 +533,7 @@ with_sudo() {
 
   local cmd
   if [[ "$(type -t "$1")" == "function" ]]; then
-    local declare_vars="$(declare -p CURR_USER OS ARCH DISTRO name prerelease debug ipv4 app file repo match AUTO_ENABLE_APPS AUTO_CONFIG_APPS HAS_SERVICE_APPS RED GREEN YELLOW BLUE CYAN PURPLE BOLD NC 2>/dev/null)"
+    local declare_vars="$(declare -p CURR_USER SH SH_PORT OS ARCH DISTRO name prerelease debug ipv4 app file repo match AUTO_ENABLE_APPS AUTO_CONFIG_APPS HAS_SERVICE_APPS RED GREEN YELLOW BLUE CYAN PURPLE BOLD NC 2>/dev/null)"
     local declare_funcs="$(declare -f)"
     cmd="$declare_vars; $declare_funcs; $1 "'"${@:2}"'
   else
