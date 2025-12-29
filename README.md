@@ -11,6 +11,9 @@ Tools and Scripts for Linux VPS
 
 ```sh
 bash <(curl -Lso- https://sh.vps.dance/vkit.sh)
+
+# 80/443 blocked? try port 2096 or 8443
+SH_PORT=2096 bash <(curl -Lso- https://sh.vps.dance:2096/vkit.sh)
 ```
 
 - add swap space

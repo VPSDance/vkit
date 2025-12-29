@@ -3,9 +3,11 @@
 # bash <(curl -L -s check.unlock.media)
 # https://github.com/lmc999/RegionRestrictionCheck
 
+SH_PORT="${SH_PORT:-}"; SH="https://sh.vps.dance${SH_PORT:+:${SH_PORT}}"
+
 url="lmc999/RegionRestrictionCheck/main/check.sh"
 
-url="https://sh.vps.dance/raw/$url"
+url="${SH}/raw/$url"
 main() {
   bash <(
     curl -L -s $url \

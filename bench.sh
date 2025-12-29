@@ -2,9 +2,11 @@
 
 # https://github.com/teddysun/across/blob/master/bench.sh
 
+SH_PORT="${SH_PORT:-}"; SH="https://sh.vps.dance${SH_PORT:+:${SH_PORT}}"
+
 main() {
   bash <(
-    curl -Lso- https://sh.vps.dance/raw/teddysun/across/master/bench.sh \
+    curl -Lso- ${SH}/raw/teddysun/across/master/bench.sh \
     | sed "/Los Angeles/Ii speed_test '3633' 'Shanghai CT'" \
     | sed "/Los Angeles/Ii speed_test '27594' 'Guangzhou CT'" \
     | sed "/Los Angeles/Ii speed_test '29071' 'Chengdu CT'" \

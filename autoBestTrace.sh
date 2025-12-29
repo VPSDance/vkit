@@ -4,7 +4,8 @@
 # https://github.com/nyjx/autoBestTrace
 
 bin="/usr/bin/besttrace"
-BASE_URL="https://sh.vps.dance/raw/VPSDance/vkit/main/files/besttrace/"
+SH_PORT="${SH_PORT:-}"; SH="https://sh.vps.dance${SH_PORT:+:${SH_PORT}}"
+BASE_URL="${SH}/raw/VPSDance/vkit/main/files/besttrace/"
 
 # debug flag: default silent; enable via DEBUG=1
 DEBUG=${DEBUG:-0}

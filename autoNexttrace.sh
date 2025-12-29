@@ -4,6 +4,8 @@
 # bash <(curl -Lso- https://sh.vps.dance/autoNexttrace.sh)
 # bash <(curl -Lso- https://cdn.jsdelivr.net/gh/VPSDance/vkit@main/autoNexttrace.sh)
 
+SH_PORT="${SH_PORT:-}"; SH="https://sh.vps.dance${SH_PORT:+:${SH_PORT}}"
+
 footer() {
   BLUE="\033[34m"; NC='\033[0m'
   printf "%b\n" " Supported by: ${BLUE}https://vps.dance${NC}"
@@ -12,7 +14,7 @@ footer() {
 
 # install nexttrace
 if [ ! -f "/usr/bin/nexttrace" ]; then
-  bash <(curl -Lso- https://sh.vps.dance/tools.sh) nexttrace -p
+  bash <(curl -Lso- ${SH}/tools.sh) nexttrace -p
 fi
 
 next() {

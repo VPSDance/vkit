@@ -12,6 +12,8 @@ NC='\033[0m'
 # Keep stdio on tty for interactive reads when piped
 read_tty() { read -p "$1" "$2" </dev/tty; }
 
+SH_PORT="${SH_PORT:-}"; SH="https://sh.vps.dance${SH_PORT:+:${SH_PORT}}"
+
 OS=$(uname -s) # Linux, FreeBSD, Darwin
 ARCH=$(uname -m) # x86_64, arm64/aarch64, i386, 
 # DISTRO=$( [[ -e $(which lsb_release) ]] && (lsb_release -si) || echo 'unknown' ) which/lsb_release command not found
@@ -214,10 +216,10 @@ not_support_ipv6 () {
 download () {
   local temp_dir=$(mktemp -d)
   suffix=$( [[ "$prerelease" = true ]] && echo "releases" || echo "releases/latest" )
-  prefix=$( [ -z "$ipv4" ] && echo "https://sh.vps.dance" || echo "https://ghfast.top" )
+  prefix=$( [ -z "$ipv4" ] && echo "$SH" || echo "https://ghfast.top" )
   if [[ -n "$repo" ]]; then
     # api="https://api.github.com/repos/$repo/$suffix"
-    api="https://sh.vps.dance/api/repos/$repo/$suffix"
+    api="${SH}/api/repos/$repo/$suffix"
     # curl -s https://api.github.com/repos/nxtrace/NTrace-core/releases | grep "browser_download_url.*$match" | head -1 | cut -d : -f 2,3 | xargs echo
     url=$( curl -s $api | grep "browser_download_url.*$match" | head -1 | cut -d : -f 2,3 | xargs echo ) # xargs wget
     if [[ -z "$url" ]]; then

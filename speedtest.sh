@@ -3,6 +3,8 @@
 # Usage:
 # bash <(curl -Lso- https://sh.vps.dance/speedtest.sh)
 
+SH_PORT="${SH_PORT:-}"; SH="https://sh.vps.dance${SH_PORT:+:${SH_PORT}}"
+
 # Colors
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[0;33m'; BLUE='\033[34m'; CYAN='\033[0;36m'; PURPLE='\033[35m'; BOLD='\033[1m'; NC='\033[0m';
 success() { printf "${GREEN}%b${NC} ${@:2}\n" "$1"; }
@@ -19,7 +21,7 @@ DISTRO=$( ([[ -e "/usr/bin/yum" ]] && echo 'CentOS') || ([[ -e "/usr/bin/apt" ]]
 CURR_USER="$(whoami)"
 ipv4="$(curl -m 5 -fsL4 http://ipv4.ip.sb)"
 loc=$(curl -m5 -sL "https://www.qualcomm.cn/cdn-cgi/trace" | awk -F'=' '/loc/{ print $2 }') # CN,HK,JP,DE,US
-prefix=$( [ -z "$ipv4" ] && echo "https://sh.vps.dance" || echo "https://ghgo.xyz" )
+prefix=$( [ -z "$ipv4" ] && echo "$SH" || echo "https://ghfast.top" )
 debug=0;
 
 install_requirements() {

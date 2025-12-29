@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # bash <(curl -Lso- https://sh.vps.dance/vkit.sh)
+# SH_PORT=2096 bash <(curl -Lso- https://sh.vps.dance:2096/vkit.sh)
 
 # Colors
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[0;33m'; BLUE='\033[34m'; CYAN='\033[0;36m'; PURPLE='\033[35m'; BOLD='\033[1m'; NC='\033[0m';
@@ -16,8 +17,9 @@ ARCH=$(uname -m) # x86_64, arm64, aarch64
 DISTRO=$( ([[ -e "/usr/bin/yum" ]] && echo 'CentOS') || ([[ -e "/usr/bin/apt" ]] && echo 'Debian') || echo 'unknown' )
 debug=$( [[ $OS == "Darwin" ]] && echo true || echo false )
 cnd=$( tr '[:upper:]' '[:lower:]' <<<"$1" )
-SH='https://sh.vps.dance'
-GH='https://ghgo.xyz'
+
+SH_PORT="${SH_PORT:-}"; SH="https://sh.vps.dance${SH_PORT:+:${SH_PORT}}"
+GH='https://ghfast.top'
 
 CURR_USER="$(whoami)"
 # with_sudo func; with_sudo ls /root;

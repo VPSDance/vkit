@@ -3,6 +3,8 @@
 # Usage:
 # bash <(curl -Lso- https://sh.vps.dance/bashrc.sh)
 
+SH_PORT="${SH_PORT:-}"; SH="https://sh.vps.dance${SH_PORT:+:${SH_PORT}}"
+
 # Colors
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[0;33m'; BLUE="\033[34m"; PURPLE="\033[35m"; BOLD="\033[1m"; NC='\033[0m';
 
@@ -44,7 +46,7 @@ apply_bashrc() {
     if [[ ! -f "$file" ]]; then continue; fi
     # insert lines
     printf "%s\n" "# => vps.dance" >>$file
-    printf "%s\n" "$(curl -Lso- https://sh.vps.dance/raw/VPSDance/vkit/main/files/bashrc)" >>$file
+    printf "%s\n" "$(curl -Lso- ${SH}/raw/VPSDance/vkit/main/files/bashrc)" >>$file
     printf "%s\n" "# <= vps.dance" >>$file
   done
 }
