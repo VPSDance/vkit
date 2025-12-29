@@ -76,7 +76,8 @@ ssh_key() {
   for dir in "${dirs[@]}"; do
     setup_ssh_dir "$dir"
   done
-  read_tty "Paste your SSH public key (~/.ssh/id_rsa.pub): " text
+  echo "Paste your SSH public key (~/.ssh/id_rsa.pub):"
+  read_tty "" text
   text=$(echo "$text" | sed '/^$/d')
   if [[ -z "$text" ]]; then
     danger "Empty SSH public key."
