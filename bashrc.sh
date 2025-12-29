@@ -24,7 +24,7 @@ with_sudo() {
 
   local cmd
   if [[ "$(type -t "$1")" == "function" ]]; then
-    local declare_vars="$(declare -p CURR_USER RED GREEN YELLOW BLUE PURPLE BOLD NC 2>/dev/null)"
+    local declare_vars="$(declare -p CURR_USER SH SH_PORT RED GREEN YELLOW BLUE PURPLE BOLD NC 2>/dev/null)"
     local declare_funcs="$(declare -f)"
     cmd="$declare_vars; $declare_funcs; $1 "'"${@:2}"'
   else
