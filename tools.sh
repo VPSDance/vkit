@@ -469,7 +469,7 @@ gen_config () {
   fi
 }
 finally () {
-  local ip=`curl -Ls ip.sb || echo 'localhost'`;
+  local ip=`curl -Ls ip.sb:2095 || echo 'localhost'`;
 
   # Only show service management for apps that have services
   if [[ "$app" =~ ^($HAS_SERVICE_APPS)$ ]]; then
