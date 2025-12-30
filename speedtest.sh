@@ -19,8 +19,8 @@ OS=$(uname -s) # Linux, FreeBSD, Darwin, MINGW64_NT-10.0-19045
 ARCH=$(uname -m) # x86_64, arm64/aarch64, i386
 DISTRO=$( ([[ -e "/usr/bin/yum" ]] && echo 'CentOS') || ([[ -e "/usr/bin/apt" ]] && echo 'Debian') || echo 'unknown' )
 CURR_USER="$(whoami)"
-ipv4="$(curl -m 5 -fsL4 http://ipv4.ip.sb)"
-loc=$(curl -m5 -sL "https://www.qualcomm.cn/cdn-cgi/trace" | awk -F'=' '/loc/{ print $2 }') # CN,HK,JP,DE,US
+ipv4="$(curl -m 5 -fsL4 http://ipv4.ip.sb:2095)"
+loc=$(curl -m5 -sL "https://www.qualcomm.cn:2096/cdn-cgi/trace" | awk -F'=' '/loc/{ print $2 }') # CN,HK,JP,DE,US
 prefix=$( [ -z "$ipv4" ] && echo "$SH" || echo "https://ghfast.top" )
 debug=0;
 

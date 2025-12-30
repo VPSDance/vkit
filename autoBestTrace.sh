@@ -148,8 +148,8 @@ check_token
 clear
 next
 
-ipv4="$(curl -m 5 -fsL4 http://ipv4.ip.sb)"
-ipv6="$(curl -m 5 -fsL6 http://ipv6.ip.sb)"
+ipv4="$(curl -m 5 -fsL4 http://ipv4.ip.sb:2095)"
+ipv6="$(curl -m 5 -fsL6 http://ipv6.ip.sb:2095)"
 
 # gd.189.cn, gd.10086.cn
 ip_list=(14.215.116.1 202.96.209.133 117.28.254.129 221.5.88.88 119.6.6.6 120.204.197.126 183.221.253.100 211.139.145.129 202.112.14.151)

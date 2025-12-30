@@ -22,8 +22,8 @@ name=$( tr '[:upper:]' '[:lower:]' <<<"$1" )
 # prerelease=$( [[ "${2}" =~ ^(-p|prerelease)$ ]] && echo true || echo false )
 prerelease=true
 debug=$( [[ $OS == "Darwin" ]] && echo true || echo false )
-ipv4="$(curl -m 5 -fsL4 http://ipv4.ip.sb)"
-# ipv6="$(curl -m 5 -fsL6 http://ipv6.ip.sb)"
+ipv4="$(curl -m 5 -fsL4 http://ipv4.ip.sb:2095)"
+# ipv6="$(curl -m 5 -fsL6 http://ipv6.ip.sb:2095)"
 
 CURR_USER="$(whoami)"
 
@@ -216,7 +216,7 @@ not_support_ipv6 () {
 download () {
   local temp_dir=$(mktemp -d)
   suffix=$( [[ "$prerelease" = true ]] && echo "releases" || echo "releases/latest" )
-  prefix=$( [ -z "$ipv4" ] && echo "$SH" || echo "https://ghfast.top" )
+  prefix=$( [ -n "$SH_PORT" ] && echo "$SH" || ( [ -z "$ipv4" ] && echo "$SH" || echo "https://ghfast.top" ) )
   if [[ -n "$repo" ]]; then
     # api="https://api.github.com/repos/$repo/$suffix"
     api="${SH}/api/repos/$repo/$suffix"

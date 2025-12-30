@@ -24,8 +24,8 @@ next() {
 clear
 next
 
-ipv4="$(curl -m 5 -fsL4 http://ipv4.ip.sb)"
-ipv6="$(curl -m 5 -fsL6 http://ipv6.ip.sb)"
+ipv4="$(curl -m 5 -fsL4 http://ipv4.ip.sb:2095)"
+ipv6="$(curl -m 5 -fsL6 http://ipv6.ip.sb:2095)"
 
 # https://ispip.clang.cn/
 # gd.189.cn, gd.10086.cn
