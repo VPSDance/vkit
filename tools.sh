@@ -223,6 +223,7 @@ download () {
     # curl -s https://api.github.com/repos/nxtrace/NTrace-core/releases | grep "browser_download_url.*$match" | head -1 | cut -d : -f 2,3 | xargs echo
     url=$( curl -s $api | grep "browser_download_url.*$match" | head -1 | cut -d : -f 2,3 | xargs echo ) # xargs wget
     if [[ -z "$url" ]]; then
+      echo -e $api;
       printf "\n${RED}[x] github api error ${NC}\n\n"; exit 1;
     fi
     url="$prefix/$url"
