@@ -43,7 +43,14 @@ with_sudo() {
 apply_bashrc() {
   for file in /root/.bashrc /home/*/.bashrc; do
     # echo $file;
-    if [[ ! -f "$file" ]]; then continue; fi
+    if [[ "$file" == *"*"* ]]; then continue; fi
+    if [[ ! -f "$file" ]]; then
+      if [[ -f /etc/skel/.bashrc ]]; then
+        install -m 0644 /etc/skel/.bashrc "$file" || touch "$file"
+      else
+        touch "$file"
+      fi
+    fi
     # insert lines
     printf "%s\n" "# => vps.dance" >>$file
     printf "%s\n" "$(curl -Lso- ${SH}/raw/VPSDance/vkit/main/files/bashrc)" >>$file
@@ -54,6 +61,7 @@ apply_bashrc() {
 restore_bashrc() {
   for file in /root/.bashrc /home/*/.bashrc; do
     # echo $file;
+    if [[ "$file" == *"*"* ]]; then continue; fi
     if [[ ! -f "$file" ]]; then continue; fi
     # delete lines between two patterns
     sed -i '/^# => vps.dance/,/^# <= vps.dance/d' $file
