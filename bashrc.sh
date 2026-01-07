@@ -40,10 +40,19 @@ with_sudo() {
 # allusers=$( cat /etc/passwd | grep -vE "(/bin/false|/sbin/nologin|/bin/sync|guest-)" | cut -d: -f1 )
 # allusers=$(awk -F':' '$2 ~ "\\$" {print $1}' /etc/shadow)
 
+ensure_profile_load_bashrc() {
+  local base="${1%/.bashrc}" profile="$base/.bash_profile"
+  [[ -f "$profile" ]] || profile="$base/.profile"
+  [[ -f "$profile" ]] || : >"$profile"
+  grep -qxF '[ -f ~/.bashrc ] && . ~/.bashrc' "$profile" || \
+    printf "%s\n" '[ -f ~/.bashrc ] && . ~/.bashrc' >>"$profile"
+}
+
 apply_bashrc() {
   for file in /root/.bashrc /home/*/.bashrc; do
     # echo $file;
     if [[ "$file" == *"*"* ]]; then continue; fi
+    ensure_profile_load_bashrc "$file"
     if [[ ! -f "$file" ]]; then
       if [[ -f /etc/skel/.bashrc ]]; then
         install -m 0644 /etc/skel/.bashrc "$file" || touch "$file"
@@ -65,6 +74,11 @@ restore_bashrc() {
     if [[ ! -f "$file" ]]; then continue; fi
     # delete lines between two patterns
     sed -i '/^# => vps.dance/,/^# <= vps.dance/d' $file
+  done
+  for file in /root/.bash_profile /root/.profile /home/*/.bash_profile /home/*/.profile; do
+    if [[ "$file" == *"*"* ]]; then continue; fi
+    if [[ ! -f "$file" ]]; then continue; fi
+    sed -i '/^\[ -f ~\/\.bashrc \] && \. ~\/\.bashrc$/d' $file
   done
 }
 
@@ -95,6 +109,7 @@ menu() {
   if [[ "$num" == "1" ]]; then
     with_sudo restore_bashrc
     with_sudo apply_bashrc
+    info "提示: source ~/.bashrc 或重新登录"
     reload_bashrc
   elif [[ "$num" == "2" ]]; then
     with_sudo restore_bashrc
