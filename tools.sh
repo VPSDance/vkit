@@ -28,7 +28,7 @@ ipv4="$(curl -m 5 -fsL4 http://ipv4.ip.sb:2095)"
 CURR_USER="$(whoami)"
 
 # Application categories
-AUTO_ENABLE_APPS="snell|ss|miniserve|ddns-go"  # Apps that auto-enable service
+AUTO_ENABLE_APPS="snell|ss|realm|miniserve|ddns-go"  # Apps that auto-enable service
 AUTO_CONFIG_APPS="snell|ss|miniserve"          # Apps that prompt for config and auto-create
 HAS_SERVICE_APPS="snell|realm|gost|ss|ddns-go|miniserve|hysteria-server"  # Apps that have systemd services
 
