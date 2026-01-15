@@ -19,8 +19,7 @@ ARCH=$(uname -m) # x86_64, arm64/aarch64, i386,
 # DISTRO=$( [[ -e $(which lsb_release) ]] && (lsb_release -si) || echo 'unknown' ) which/lsb_release command not found
 DISTRO=$( ([[ -e "/usr/bin/yum" ]] && echo 'CentOS') || ([[ -e "/usr/bin/apt" ]] && echo 'Debian') || echo 'unknown' )
 name=$( tr '[:upper:]' '[:lower:]' <<<"$1" )
-# prerelease=$( [[ "${2}" =~ ^(-p|prerelease)$ ]] && echo true || echo false )
-prerelease=true
+#
 debug=$( [[ $OS == "Darwin" ]] && echo true || echo false )
 ipv4="$(curl -m 5 -fsL4 http://ipv4.ip.sb:2095)"
 # ipv6="$(curl -m 5 -fsL6 http://ipv6.ip.sb:2095)"
@@ -215,12 +214,11 @@ not_support_ipv6 () {
 }
 download () {
   local temp_dir=$(mktemp -d)
-  suffix=$( [[ "$prerelease" = true ]] && echo "releases" || echo "releases/latest" )
+  suffix="releases/latest"
   prefix=$( [ -n "$SH_PORT" ] && echo "$SH" || ( [ -z "$ipv4" ] && echo "$SH" || echo "https://ghfast.top" ) )
   if [[ -n "$repo" ]]; then
-    # api="https://api.github.com/repos/$repo/$suffix"
     api="${SH}/api/repos/$repo/$suffix"
-    # curl -s https://api.github.com/repos/nxtrace/NTrace-core/releases | grep "browser_download_url.*$match" | head -1 | cut -d : -f 2,3 | xargs echo
+    # curl -s https://api.github.com/repos/nxtrace/NTrace-core/releases/latest | grep "browser_download_url.*$match" | head -1 | cut -d : -f 2,3 | xargs echo
     url=$( curl -s $api | grep "browser_download_url.*$match" | head -1 | cut -d : -f 2,3 | xargs echo ) # xargs wget
     if [[ -z "$url" ]]; then
       echo -e $api;
@@ -523,7 +521,7 @@ systemctl stop $app       # Stop service"
   fi
 }
 
-# echo "name: $name; repo=$repo; prerelease=$prerelease"
+# echo "name: $name; repo=$repo;
 init
 
 with_sudo() {
@@ -534,7 +532,7 @@ with_sudo() {
 
   local cmd
   if [[ "$(type -t "$1")" == "function" ]]; then
-    local declare_vars="$(declare -p CURR_USER SH SH_PORT OS ARCH DISTRO name prerelease debug ipv4 app file repo match AUTO_ENABLE_APPS AUTO_CONFIG_APPS HAS_SERVICE_APPS RED GREEN YELLOW BLUE CYAN PURPLE BOLD NC 2>/dev/null)"
+    local declare_vars="$(declare -p CURR_USER SH SH_PORT OS ARCH DISTRO name debug ipv4 app file repo match AUTO_ENABLE_APPS AUTO_CONFIG_APPS HAS_SERVICE_APPS RED GREEN YELLOW BLUE CYAN PURPLE BOLD NC 2>/dev/null)"
     local declare_funcs="$(declare -f)"
     cmd="$declare_vars; $declare_funcs; $1 "'"${@:2}"'
   else
