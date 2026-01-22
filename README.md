@@ -94,6 +94,12 @@ bash <(curl -Lso- https://sh.vps.dance/sources.sh) debian11
 bash <(curl -Lso- https://sh.vps.dance/paste.sh)
 ```
 
+- upgrade Typecho
+
+```sh
+bash <(curl -Lso- https://sh.vps.dance/apps/typecho.sh) -s /var/www/typecho
+```
+
 ## Acknowledgements
 
 Thanks to the following projects:
