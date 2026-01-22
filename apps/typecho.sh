@@ -6,11 +6,11 @@ usage() {
 Typecho 升级脚本
 
 用法:
-  ./typecho.sh [-s 站点目录] [-n]
+  ./typecho.sh [-s 站点目录] [--dry-run]
 
 选项:
   -s, --site       站点根目录 (默认: 当前目录)
-  -n, --dry-run    仅预演, 不改动文件
+  --dry-run        仅预演(dry-run), 不改动文件
   -h, --help       显示帮助
 EOF
 }
@@ -27,7 +27,7 @@ while [ $# -gt 0 ]; do
       SITE_ROOT="$2"
       shift 2
       ;;
-    -n|--dry-run)
+    --dry-run)
       DRY_RUN=1
       shift
       ;;
