@@ -105,8 +105,8 @@ fi
 
 ADMIN_DIR="$(detect_admin_dir)"
 TS="$(date +%Y%m%d%H%M%S)"
-STAGING="$SITE_ROOT/.upgrade_tmp_$TS"
-BACKUP="$SITE_ROOT/.upgrade_backup/$TS"
+STAGING="/tmp/typecho-upgrade/.staging_$TS"
+BACKUP="/tmp/typecho-upgrade/$TS"
 TMP_DIR="$(mktemp -d -t typecho-upgrade.XXXXXX)"
 ZIP_PATH="$TMP_DIR/typecho.zip"
 SRC_DIR="$TMP_DIR/src"
@@ -171,6 +171,9 @@ copy_dir "$SRC_ROOT/admin" "$STAGING/$ADMIN_DIR"
 copy_dir "$SRC_ROOT/var" "$STAGING/var"
 copy_file "$SRC_ROOT/index.php" "$STAGING/index.php"
 copy_file "$SRC_ROOT/install.php" "$STAGING/install.php"
+if [ -n "$ADMIN_DIR" ] && [ -f "$STAGING/install.php" ]; then
+  sed -E -i "s#(define\\('__TYPECHO_ADMIN_DIR__',\\s*')[^']*('\\);)#\\1/${ADMIN_DIR}/\\2#" "$STAGING/install.php"
+fi
 
 if [ -d "$SRC_ROOT/install" ]; then
   copy_dir "$SRC_ROOT/install" "$STAGING/install"
