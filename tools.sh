@@ -89,13 +89,16 @@ init () {
       app="realm"
       file="/root/realm.toml"
       repo="zhboner/realm"
-      # match=""
+      # use explicit asset name to avoid matching realm-slim
       case $ARCH in
-        aarch64)
-          match="aarch64.*linux-gnu.*.gz"
+        aarch64 | arm64)
+          match="realm-aarch64-unknown-linux-gnu.tar.gz"
         ;;
-        *) #x86_64
-         match="x86_64.*linux-gnu.*.gz"
+        x86_64 | amd64)
+          match="realm-x86_64-unknown-linux-gnu.tar.gz"
+        ;;
+        *)
+          printf "\n${RED}[x] realm does not support ARCH: $ARCH in this script. ${NC}\n\n"; exit 1;
         ;;
       esac
     ;;
@@ -289,7 +292,11 @@ download () {
       if [[ `compgen -G "$temp_dir/realm*.tar.gz"` ]]; then 
         tar xzf "$temp_dir"/realm*.tar.gz -C "$temp_dir" && rm -f "$temp_dir"/realm*.tar.gz
       fi
-      mv "$temp_dir"/realm /usr/bin/realm && chmod +x /usr/bin/realm
+      if [[ -f "$temp_dir/realm" ]]; then
+        mv "$temp_dir"/realm /usr/bin/realm && chmod +x /usr/bin/realm
+      else
+        printf "\n${RED}[x] realm binary not found in archive. ${NC}\n\n"; exit 1;
+      fi
     ;;
     gost)
       tar xzf "$temp_dir"/gost_*.tar.gz -C "$temp_dir"
