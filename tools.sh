@@ -323,7 +323,7 @@ download () {
       mv "$temp_dir"/ddns-go /usr/bin/ && rm -f "$temp_dir"/ddns-go_*tar.gz* "$temp_dir"/LICENSE "$temp_dir"/README.md
     ;;
     nexttrace)
-      mv "$temp_dir"/nexttrace_* /usr/bin/nexttrace && chmod +x /usr/bin/nexttrace
+      mv "$temp_dir"/nexttrace[-_]* /usr/bin/nexttrace && chmod +x /usr/bin/nexttrace
     ;;
     miniserve)
       mv "$temp_dir"/miniserve* /usr/bin/miniserve && chmod +x /usr/bin/miniserve
