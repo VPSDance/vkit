@@ -1,0 +1,143 @@
+name: Checks
+
+on:
+  push:
+  pull_request:
+  schedule:
+    - cron: "23 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  scripts:
+    if: github.event_name == 'push' || github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
+
+      - name: Check Bash syntax
+        run: find . -type f -name '*.sh' -not -path './.git/*' -print0 | xargs -0 -n1 bash -n
+
+      - name: Check changed lines
+        env:
+          BEFORE_SHA: ${{ github.event.before }}
+        run: |
+          if [[ "$GITHUB_EVENT_NAME" == "pull_request" ]]; then
+            git diff --check "origin/$GITHUB_BASE_REF"...HEAD
+          elif [[ -n "$BEFORE_SHA" && ! "$BEFORE_SHA" =~ ^0+$ ]]; then
+            git diff --check "$BEFORE_SHA" HEAD
+          else
+            git diff-tree --check --root -r HEAD
+          fi
+
+  tools-canary:
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Download deployed tools script
+        run: curl -fsSL --retry 3 https://sh.vps.dance/tools.sh -o "$RUNNER_TEMP/tools.sh"
+
+      - name: Check deployed script syntax
+        run: bash -n "$RUNNER_TEMP/tools.sh"
+
+      - name: Check GitHub release assets
+        env:
+          SH: https://sh.vps.dance
+        run: |
+          set -euo pipefail
+          while IFS='|' read -r name repo match; do
+            echo "Checking $name"
+            release=$(curl -fsSL --retry 3 --max-time 30 "$SH/api/repos/$repo/releases/latest")
+            url=$(jq -r --arg re "$match" \
+              '[.assets[].browser_download_url | select(test($re))][0] // empty' <<<"$release")
+            if [[ -z "$url" ]]; then
+              echo "No release asset matched '$match' in $repo" >&2
+              exit 1
+            fi
+            curl -fsSIL --retry 2 --max-time 45 "$SH/$url" >/dev/null
+          done <<'ASSETS'
+          realm-amd64|zhboner/realm|realm-x86_64-unknown-linux-gnu.tar.gz
+          realm-arm64|zhboner/realm|realm-aarch64-unknown-linux-gnu.tar.gz
+          gost-amd64|go-gost/gost|linux_amd64.tar.gz
+          gost-arm64|go-gost/gost|linux_arm64.tar.gz
+          gost-386|go-gost/gost|linux_386.tar.gz
+          shadowsocks-amd64|shadowsocks/shadowsocks-rust|x86_64.*linux-gnu
+          shadowsocks-arm64|shadowsocks/shadowsocks-rust|aarch64.*linux-gnu
+          nali-amd64|zu1k/nali|linux-amd64
+          nali-arm64|zu1k/nali|linux-armv8
+          ddns-go-amd64|jeessy2/ddns-go|linux_.*x86_64
+          ddns-go-arm64|jeessy2/ddns-go|linux_.*arm64
+          nexttrace-amd64|nxtrace/Ntrace-core|linux_amd64
+          nexttrace-arm64|nxtrace/Ntrace-core|linux_arm64
+          miniserve-amd64|svenstaro/miniserve|x86_64-unknown-linux-gnu
+          miniserve-arm64|svenstaro/miniserve|aarch64-unknown-linux-gnu
+          miniserve-armv7|svenstaro/miniserve|armv7-unknown-linux-gnueabihf
+          ASSETS
+
+      - name: Check direct downloads
+        env:
+          SH: https://sh.vps.dance
+        run: |
+          set -euo pipefail
+          while IFS='|' read -r name url; do
+            echo "Checking $name"
+            curl -fsSIL --retry 2 --max-time 45 "$url" >/dev/null
+          done <<URLS
+          snell3-amd64|$SH/https://raw.githubusercontent.com/VPSDance/files/main/snell/v3.0.1/snell-server-v3.0.1-linux-amd64.zip
+          snell3-arm64|$SH/https://raw.githubusercontent.com/VPSDance/files/main/snell/v3.0.1/snell-server-v3.0.1-linux-aarch64.zip
+          snell3-armv7|$SH/https://raw.githubusercontent.com/VPSDance/files/main/snell/v3.0.1/snell-server-v3.0.1-linux-armv7l.zip
+          snell4-amd64|https://dl.nssurge.com/snell/snell-server-v4.1.1-linux-amd64.zip
+          snell4-arm64|https://dl.nssurge.com/snell/snell-server-v4.1.1-linux-aarch64.zip
+          snell4-armv7|https://dl.nssurge.com/snell/snell-server-v4.1.1-linux-armv7l.zip
+          snell5-amd64|https://dl.nssurge.com/snell/snell-server-v5.0.0-linux-amd64.zip
+          snell5-arm64|https://dl.nssurge.com/snell/snell-server-v5.0.0-linux-aarch64.zip
+          snell5-armv7|https://dl.nssurge.com/snell/snell-server-v5.0.0-linux-armv7l.zip
+          URLS
+          curl -fsSL --retry 3 --max-time 30 https://get.hy2.sh/ -o "$RUNNER_TEMP/get-hy2.sh"
+          bash -n "$RUNNER_TEMP/get-hy2.sh"
+
+      - name: Check tool installations
+        run: |
+          set -euo pipefail
+          check_install() {
+            local app="$1"
+            shift
+            echo "Installing $app"
+            sudo rm -f "$@"
+            sudo bash "$RUNNER_TEMP/tools.sh" "$app" --install-only
+            local binary
+            for binary in "$@"; do
+              if [[ ! -x "$binary" ]]; then
+                echo "$app did not install executable: $binary" >&2
+                exit 1
+              fi
+            done
+          }
+
+          check_install snell /usr/bin/snell-server
+          check_install snell4 /usr/bin/snell-server
+          check_install snell5 /usr/bin/snell-server
+          check_install realm /usr/bin/realm
+          check_install gost /usr/bin/gost
+          check_install ss /usr/bin/ssserver /usr/bin/sslocal /usr/bin/ssurl /usr/bin/ssmanager /usr/bin/ssservice
+          check_install nali /usr/bin/nali
+          check_install ddns-go /usr/bin/ddns-go
+          check_install nexttrace /usr/bin/nexttrace
+          check_install miniserve /usr/bin/miniserve
+
+          echo "Installing hy2"
+          sudo rm -f /usr/local/bin/hysteria
+          sudo env FORCE_NO_SYSTEMD=2 bash "$RUNNER_TEMP/tools.sh" hy2 --install-only
+          [[ -x /usr/local/bin/hysteria ]] || {
+            echo "hy2 did not install executable: /usr/local/bin/hysteria" >&2
+            exit 1
+          }
+
+          nexttrace --version
+          hysteria version

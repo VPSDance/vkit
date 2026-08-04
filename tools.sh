@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # Usage:
-# bash <(curl -Lso- https://sh.vps.dance/tools.sh) [snell|snell4|snell5|realm|gost|ss|nali|ddns-go|nexttrace|hy2|miniserve]
+# bash <(curl -Lso- https://sh.vps.dance/tools.sh) [snell|snell4|snell5|realm|gost|ss|nali|ddns-go|nexttrace|hy2|miniserve] [--install-only]
 
 # Colors
 RED='\033[0;31m'
@@ -19,6 +19,7 @@ ARCH=$(uname -m) # x86_64, arm64/aarch64, i386,
 # DISTRO=$( [[ -e $(which lsb_release) ]] && (lsb_release -si) || echo 'unknown' ) which/lsb_release command not found
 DISTRO=$( ([[ -e "/usr/bin/yum" ]] && echo 'CentOS') || ([[ -e "/usr/bin/apt" ]] && echo 'Debian') || echo 'unknown' )
 name=$( tr '[:upper:]' '[:lower:]' <<<"$1" )
+install_only=$( [[ "$2" == "--install-only" ]] && echo true || echo false )
 #
 debug=$( [[ $OS == "Darwin" ]] && echo true || echo false )
 ipv4="$(curl -m 5 -fsL4 http://ipv4.ip.sb:2095)"
@@ -555,6 +556,7 @@ with_sudo() {
 
 with_sudo install_deps
 with_sudo download
+if [[ "$install_only" == true ]]; then exit 0; fi
 with_sudo gen_service
 with_sudo gen_config
 with_sudo finally
