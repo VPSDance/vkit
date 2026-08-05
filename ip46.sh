@@ -83,10 +83,8 @@ restore_ipv6() {
   sed -i "/$MARK/d" $SYSCTLCONF
   if [[ "$1" = 'info' ]]; then reload_sysctl;restart_network;restore_success;check_ipv6; fi
 }
-interfaces=("all" "default");
-# interfaces+=$(ls /sys/class/net | grep -E '^(eth.*|lo)$')
-# for interface in "${interfaces[@]}"; do echo $interface; done;
 enable_ipv6() {
+  local interfaces=("all" "default")
   restore_ipv6
   for interface in "${interfaces[@]}"; do
     echo "net.ipv6.conf.${interface}.disable_ipv6=0 $MARK" >>$SYSCTLCONF
@@ -96,6 +94,7 @@ enable_ipv6() {
   check_ipv6
 }
 disable_ipv6() {
+  local interfaces=("all" "default")
   restore_ipv6
   for interface in "${interfaces[@]}"; do
     echo "net.ipv6.conf.${interface}.disable_ipv6=1 $MARK" >>$SYSCTLCONF
