@@ -29,7 +29,7 @@ with_sudo() {
   if [[ "$(type -t "$target")" == "function" ]]; then
     local declare_vars="$(declare -p CURR_USER SH SH_PORT RED GREEN YELLOW BLUE PURPLE BOLD NC 2>/dev/null)"
     local declare_funcs="$(declare -f)"
-    sudo bash -c "$declare_vars; $declare_funcs; \"\$0\" \"\$@\"" -- "$target" "$@" < /dev/tty
+    sudo bash -c "$declare_vars; $declare_funcs; \"\$0\" \"\$@\"" "$target" "$@" < /dev/tty
   else
     sudo -- "$target" "$@" < /dev/tty
   fi

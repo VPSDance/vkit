@@ -27,7 +27,7 @@ with_sudo() {
   if [[ "$(type -t "$target")" == "function" ]]; then
     local declare_vars="$(declare -p CURR_USER swap_file line_mark RED GREEN YELLOW BLUE CYAN PURPLE BOLD NC 2>/dev/null)"
     local declare_funcs="$(declare -f)"
-    sudo bash -c "$declare_vars; $declare_funcs; \"\$0\" \"\$@\"" -- "$target" "$@" < /dev/tty
+    sudo bash -c "$declare_vars; $declare_funcs; \"\$0\" \"\$@\"" "$target" "$@" < /dev/tty
   else
     sudo -- "$target" "$@" < /dev/tty
   fi
