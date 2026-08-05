@@ -45,25 +45,21 @@ install_requirements() {
   # }
 }
 with_sudo() {
+  local target="$1"; shift
+  if [[ $EUID -eq 0 ]]; then
+    "$target" "$@"
+    return
+  fi
   if ! command -v sudo >/dev/null 2>&1; then
     echo -e "${RED}Error: sudo command not found${NC}" >&2
     return 1
   fi
-  local cmd
-  if [[ "$(type -t "$1")" == "function" ]]; then
-    # if function, need to pass all variables and function definitions
+  if [[ "$(type -t "$target")" == "function" ]]; then
     local declare_vars="$(declare -p RED GREEN YELLOW BLUE CYAN PURPLE BOLD NC success info danger warn CURR_USER OS ARCH DISTRO ipv4 loc prefix 2>/dev/null)"
     local declare_funcs="$(declare -f)"
-    cmd="$declare_vars; $declare_funcs; $1 "'"${@:2}"'
+    sudo bash -c "$declare_vars; $declare_funcs; \"\$0\" \"\$@\"" -- "$target" "$@" < /dev/tty
   else
-    # if normal command
-    cmd="$1 "'"${@:2}"'
-  fi
-
-  if [[ $EUID -ne 0 ]]; then
-    sudo bash -c "$cmd" -- "$@" < /dev/tty
-  else
-    bash -c "$cmd" -- "$@"
+    sudo -- "$target" "$@" < /dev/tty
   fi
 }
 # get latest version

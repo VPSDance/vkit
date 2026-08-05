@@ -17,24 +17,21 @@ read_tty() { read -p "$1" "$2" </dev/tty; }
 
 CURR_USER="$(whoami)"
 with_sudo() {
+  local target="$1"; shift
+  if [[ $EUID -eq 0 ]]; then
+    "$target" "$@"
+    return
+  fi
   if ! command -v sudo >/dev/null 2>&1; then
     warn "Error: sudo command not found"
     return 1
   fi
-
-  local cmd
-  if [[ "$(type -t "$1")" == "function" ]]; then
+  if [[ "$(type -t "$target")" == "function" ]]; then
     local declare_vars="$(declare -p CURR_USER SH SH_PORT RED GREEN YELLOW BLUE PURPLE BOLD NC 2>/dev/null)"
     local declare_funcs="$(declare -f)"
-    cmd="$declare_vars; $declare_funcs; $1 "'"${@:2}"'
+    sudo bash -c "$declare_vars; $declare_funcs; \"\$0\" \"\$@\"" -- "$target" "$@" < /dev/tty
   else
-    cmd="$1 "'"${@:2}"'
-  fi
-
-  if [[ $EUID -ne 0 ]]; then
-    sudo bash -c "$cmd" -- "$@" < /dev/tty
-  else
-    bash -c "$cmd" -- "$@"
+    sudo -- "$target" "$@" < /dev/tty
   fi
 }
 # allusers=$( cat /etc/passwd | grep -vE "(/bin/false|/sbin/nologin|/bin/sync|guest-)" | cut -d: -f1 )
