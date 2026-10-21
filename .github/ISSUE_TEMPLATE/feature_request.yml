@@ -1,0 +1,33 @@
+name: Feature request
+description: Suggest an improvement to vkit.
+title: "[Feature] "
+labels: [enhancement]
+body:
+  - type: checkboxes
+    id: existing-issues
+    attributes:
+      label: Before submitting
+      options:
+        - label: I searched existing issues for the same request.
+          required: true
+  - type: textarea
+    id: use-case
+    attributes:
+      label: Use case
+      description: What are you trying to do, and which script is involved?
+    validations:
+      required: true
+  - type: textarea
+    id: current-limitation
+    attributes:
+      label: Current limitation
+      description: What prevents you from doing this with the existing scripts?
+    validations:
+      required: true
+  - type: textarea
+    id: proposed-behavior
+    attributes:
+      label: Proposed behavior
+      description: Describe the change you would like to see.
+    validations:
+      required: true

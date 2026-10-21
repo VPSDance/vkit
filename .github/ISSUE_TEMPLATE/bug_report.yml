@@ -1,0 +1,53 @@
+name: Bug report
+description: Report a problem with a vkit script or tool installation.
+title: "[Bug] "
+labels: [bug]
+body:
+  - type: checkboxes
+    id: existing-issues
+    attributes:
+      label: Before submitting
+      options:
+        - label: I searched existing issues for the same problem.
+          required: true
+  - type: input
+    id: command
+    attributes:
+      label: Script or command
+      description: Which script or command failed?
+      placeholder: bash tools.sh realm --install-only
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: Include the Linux distribution, version, and CPU architecture.
+      placeholder: Debian 12, x86_64
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: List the commands and steps needed to reproduce the problem.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs
+      description: Remove passwords, tokens, private keys, and other sensitive data before posting.
+      render: shell
