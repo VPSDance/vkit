@@ -21,7 +21,7 @@ DISTRO=$( ([[ -e "/usr/bin/yum" ]] && echo 'CentOS') || ([[ -e "/usr/bin/apt" ]]
 CURR_USER="$(whoami)"
 ipv4="$(curl -m 5 -fsL4 http://ipv4.ip.sb:2095)"
 loc=$(curl -m5 -sL "https://www.qualcomm.cn:2096/cdn-cgi/trace" | awk -F'=' '/loc/{ print $2 }') # CN,HK,JP,DE,US
-prefix=$( [ -z "$ipv4" ] && echo "$SH" || echo "https://ghfast.top" )
+prefix="$SH"
 debug=0;
 
 install_requirements() {
@@ -66,7 +66,7 @@ with_sudo() {
 # $1: GitHub repo path
 get_latest_version() {
   local repo_path="$1"
-  curl -sI "${prefix}/github.com/${repo_path}/releases/latest" | grep -i "location:" | sed -n 's/.*tag\/\(v[0-9.]\+\).*/\1/p'
+  curl -sI "${prefix}/https://github.com/${repo_path}/releases/latest" | grep -i "location:" | sed -n 's/.*tag\/\(v[0-9.]\+\).*/\1/p'
 }
 # download GitHub release file
 # $1: GitHub repo path
@@ -78,7 +78,7 @@ download_file() {
   local filename="$2"
   local save_path="$3"
   local version="${4:-$(get_latest_version "$repo_path")}"
-  local download_url="${prefix}/github.com/${repo_path}/releases/download/${version}/${filename}"
+  local download_url="${prefix}/https://github.com/${repo_path}/releases/download/${version}/${filename}"
   # https://github.com/veoco/bim-core/releases/latest/download/bimc.exe
 
   info "download ${filename}..."

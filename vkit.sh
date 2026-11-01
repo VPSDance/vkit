@@ -18,7 +18,7 @@ debug=$( [[ $OS == "Darwin" ]] && echo true || echo false )
 cnd=$( tr '[:upper:]' '[:lower:]' <<<"$1" )
 
 SH_PORT="${SH_PORT:-}"; SH="https://sh.vps.dance${SH_PORT:+:${SH_PORT}}"
-GH='https://ghfast.top'
+GH="${GH:-$SH}"
 
 CURR_USER="$(whoami)"
 # with_sudo func; with_sudo ls /root;

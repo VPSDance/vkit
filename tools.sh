@@ -219,7 +219,7 @@ not_support_ipv6 () {
 download () {
   local temp_dir=$(mktemp -d)
   suffix="releases/latest"
-  prefix=$( [ -n "$SH_PORT" ] && echo "$SH" || ( [ -z "$ipv4" ] && echo "$SH" || echo "https://ghfast.top" ) )
+  prefix="$SH"
   if [[ -n "$repo" ]]; then
     api="${SH}/api/repos/$repo/$suffix"
     # curl -s https://api.github.com/repos/nxtrace/NTrace-core/releases/latest | grep "browser_download_url.*$match" | head -1 | cut -d : -f 2,3 | xargs echo
@@ -272,7 +272,7 @@ download () {
   echo "$url"
   if [[ "$debug" != true ]]; then
     if [[ -n "$url" ]]; then
-      wget --show-progress -P "$temp_dir" "$url"
+      wget --timeout=15 --tries=3 --waitretry=2 --show-progress -P "$temp_dir" "$url"
     fi
   fi
   # echo -e "\n[Extract files]"
