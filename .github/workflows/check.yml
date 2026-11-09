@@ -63,7 +63,7 @@ jobs:
               -D "$header_file" -o /dev/null \
               -w '%{http_code}\t%{content_type}\t%{url_effective}' "$url"); then
               rm -f "$header_file"
-              echo "::error title=HTTP check failed::$name could not be reached: $url"
+              echo "HTTP check failed: $name could not be reached: $url" >&2
               return 1
             fi
             IFS=$'\t' read -r status content_type final_url <<<"$meta"
@@ -74,22 +74,60 @@ jobs:
             ' "$header_file")
             rm -f "$header_file"
             if [[ "$status" != "200" ]]; then
-              echo "::error title=Unexpected HTTP status::$name returned HTTP $status: $final_url"
+              echo "Unexpected HTTP status: $name returned HTTP $status: $final_url" >&2
               return 1
             fi
             if [[ -n "$content_length" && ! "$content_length" =~ ^[1-9][0-9]*$ ]]; then
-              echo "::error title=Invalid response size::$name returned Content-Length '$content_length': $final_url"
+              echo "Invalid response size: $name returned Content-Length '$content_length': $final_url" >&2
               return 1
             fi
             if [[ -n "$expected_size" && "$content_length" != "$expected_size" ]]; then
-              echo "::error title=Unexpected response size::$name expected $expected_size bytes, got ${content_length:-unknown}: $final_url"
+              echo "Unexpected response size: $name expected $expected_size bytes, got ${content_length:-unknown}: $final_url" >&2
               return 1
             fi
             if [[ "$content_type" == text/html* ]]; then
-              echo "::error title=Unexpected response type::$name returned HTML instead of an asset: $final_url"
+              echo "Unexpected response type: $name returned HTML instead of an asset: $final_url" >&2
               return 1
             fi
             echo "$name: HTTP $status, size ${content_length:-unknown}, type ${content_type:-unknown}"
+          }
+
+          primary_proxy_available=true
+          fallback_notice_emitted=false
+          check_proxied_endpoint() {
+            local name="$1"
+            local source_url="$2"
+            local expected_size="${3:-}"
+            local fallback_url="https://ghfast.top/$source_url"
+
+            if [[ "$primary_proxy_available" == true ]]; then
+              if check_http_200 "$name (sh.vps.dance)" "$SH/$source_url" "$expected_size"; then
+                return 0
+              fi
+              primary_proxy_available=false
+              echo "::warning title=Primary download proxy unavailable::sh.vps.dance failed for $name; trying ghfast.top"
+            fi
+
+            if check_http_200 "$name (ghfast.top)" "$fallback_url" "$expected_size"; then
+              if [[ "$fallback_notice_emitted" == false ]]; then
+                echo "::warning title=Download proxy fallback::using ghfast.top after sh.vps.dance became unavailable"
+                fallback_notice_emitted=true
+              fi
+              return 0
+            fi
+
+            echo "::error title=Download endpoint unavailable::$name failed through sh.vps.dance and ghfast.top"
+            return 1
+          }
+
+          check_direct_endpoint() {
+            local name="$1"
+            local url="$2"
+            if check_http_200 "$name" "$url"; then
+              return 0
+            fi
+            echo "::error title=Direct endpoint unavailable::$name failed: $url"
+            return 1
           }
 
           declare -A release_cache
@@ -109,7 +147,7 @@ jobs:
               exit 1
             fi
             IFS=$'\t' read -r url expected_size <<<"$asset"
-            check_http_200 "$name" "$SH/$url" "$expected_size"
+            check_proxied_endpoint "$name" "$url" "$expected_size"
           done <<'ASSETS'
           realm-amd64|zhboner/realm|realm-x86_64-unknown-linux-gnu.tar.gz
           realm-arm64|zhboner/realm|realm-aarch64-unknown-linux-gnu.tar.gz
@@ -129,20 +167,26 @@ jobs:
           miniserve-armv7|svenstaro/miniserve|armv7-unknown-linux-gnueabihf
           ASSETS
 
+          while IFS='|' read -r name source_url; do
+            echo "Checking $name"
+            check_proxied_endpoint "$name" "$source_url"
+          done <<'PROXIED_URLS'
+          snell3-amd64|https://raw.githubusercontent.com/VPSDance/files/main/snell/v3.0.1/snell-server-v3.0.1-linux-amd64.zip
+          snell3-arm64|https://raw.githubusercontent.com/VPSDance/files/main/snell/v3.0.1/snell-server-v3.0.1-linux-aarch64.zip
+          snell3-armv7|https://raw.githubusercontent.com/VPSDance/files/main/snell/v3.0.1/snell-server-v3.0.1-linux-armv7l.zip
+          PROXIED_URLS
+
           while IFS='|' read -r name url; do
             echo "Checking $name"
-            check_http_200 "$name" "$url"
-          done <<URLS
-          snell3-amd64|$SH/https://raw.githubusercontent.com/VPSDance/files/main/snell/v3.0.1/snell-server-v3.0.1-linux-amd64.zip
-          snell3-arm64|$SH/https://raw.githubusercontent.com/VPSDance/files/main/snell/v3.0.1/snell-server-v3.0.1-linux-aarch64.zip
-          snell3-armv7|$SH/https://raw.githubusercontent.com/VPSDance/files/main/snell/v3.0.1/snell-server-v3.0.1-linux-armv7l.zip
+            check_direct_endpoint "$name" "$url"
+          done <<'DIRECT_URLS'
           snell4-amd64|https://dl.nssurge.com/snell/snell-server-v4.1.1-linux-amd64.zip
           snell4-arm64|https://dl.nssurge.com/snell/snell-server-v4.1.1-linux-aarch64.zip
           snell4-armv7|https://dl.nssurge.com/snell/snell-server-v4.1.1-linux-armv7l.zip
           snell5-amd64|https://dl.nssurge.com/snell/snell-server-v5.0.0-linux-amd64.zip
           snell5-arm64|https://dl.nssurge.com/snell/snell-server-v5.0.0-linux-aarch64.zip
           snell5-armv7|https://dl.nssurge.com/snell/snell-server-v5.0.0-linux-armv7l.zip
-          URLS
+          DIRECT_URLS
 
       - name: Check external installer script
         run: |

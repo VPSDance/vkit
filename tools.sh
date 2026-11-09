@@ -216,10 +216,46 @@ not_support_ipv6 () {
     printf "\n${RED}[x] $app does not support downloading over IPv6. ${NC}\n\n"; exit 1;
   fi
 }
+download_file () {
+  local temp_dir="$1"
+  local source_url="$2"
+  local filename="${source_url##*/}"
+  local download_url
+  local proxy
+  local -a proxies=("")
+
+  case "$source_url" in
+    https://github.com/*|https://raw.githubusercontent.com/*)
+      proxies=("$SH" "https://ghfast.top")
+    ;;
+  esac
+
+  for proxy in "${proxies[@]}"; do
+    if [[ -n "$proxy" ]]; then
+      download_url="$proxy/$source_url"
+    else
+      download_url="$source_url"
+    fi
+
+    echo -e "${GREEN}\n[Download]${NC}"
+    echo "$download_url"
+    if wget --timeout=15 --tries=3 --waitretry=2 --show-progress \
+      -O "$temp_dir/$filename" "$download_url"; then
+      return 0
+    fi
+
+    rm -f "$temp_dir/$filename"
+    if [[ "$proxy" == "$SH" ]]; then
+      echo -e "${YELLOW}[Warning] sh.vps.dance download failed; trying ghfast.top${NC}"
+    fi
+  done
+
+  printf "\n${RED}[x] Failed to download %s through all available sources. ${NC}\n\n" "$source_url" >&2
+  return 1
+}
 download () {
   local temp_dir=$(mktemp -d)
   suffix="releases/latest"
-  prefix="$SH"
   if [[ -n "$repo" ]]; then
     api="${SH}/api/repos/$repo/$suffix"
     # curl -s https://api.github.com/repos/nxtrace/NTrace-core/releases/latest | grep "browser_download_url.*$match" | head -1 | cut -d : -f 2,3 | xargs echo
@@ -228,7 +264,6 @@ download () {
       echo -e $api;
       printf "\n${RED}[x] github api error ${NC}\n\n"; exit 1;
     fi
-    url="$prefix/$url"
   fi
   # echo $api; echo $url;exit
   # echo -e "\n${GREEN}$app${NC}"
@@ -236,7 +271,6 @@ download () {
     snell)
       version="v3.0.1"
       url="https://raw.githubusercontent.com/VPSDance/files/main/snell/${version}/snell-server-${version}-${match}.zip"
-      url="$prefix/$url"
     ;;
     snell4 | snell5)
       not_support_ipv6 $app
@@ -268,11 +302,9 @@ download () {
     #   esac
     # ;;
   esac
-  echo -e "${GREEN}\n[Download]${NC}"
-  echo "$url"
   if [[ "$debug" != true ]]; then
     if [[ -n "$url" ]]; then
-      wget --timeout=15 --tries=3 --waitretry=2 --show-progress -P "$temp_dir" "$url"
+      download_file "$temp_dir" "$url" || exit 1
     fi
   fi
   # echo -e "\n[Extract files]"
